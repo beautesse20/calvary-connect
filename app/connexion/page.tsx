@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
@@ -9,7 +9,6 @@ import { createClient } from '@/lib/supabase/client';
 import { useLocale } from '@/components/LocaleProvider';
 
 function ConnexionForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
   const { dict, locale } = useLocale();
@@ -29,8 +28,9 @@ function ConnexionForm() {
         return;
       }
       const next = searchParams.get('next') || '/';
-      router.push(next);
-      router.refresh();
+      // Hard navigation on purpose: avoids stale Next.js router/RSC cache
+      // holding an out-of-date auth state right after signing in.
+      window.location.href = next;
     } catch (e) {
       setError(
         e instanceof Error

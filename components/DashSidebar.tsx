@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useLocale } from './LocaleProvider';
 
@@ -11,14 +10,15 @@ export default function DashSidebar({
   title: string;
   icon: React.ReactNode;
 }) {
-  const router = useRouter();
   const supabase = createClient();
   const { dict } = useLocale();
 
   async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push('/');
-    router.refresh();
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      window.location.href = '/';
+    }
   }
 
   return (

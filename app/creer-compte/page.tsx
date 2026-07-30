@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
@@ -9,7 +8,6 @@ import { createClient } from '@/lib/supabase/client';
 import { useLocale } from '@/components/LocaleProvider';
 
 export default function CreerComptePage() {
-  const router = useRouter();
   const supabase = createClient();
   const { dict, locale } = useLocale();
   const [prenom, setPrenom] = useState('');
@@ -42,8 +40,7 @@ export default function CreerComptePage() {
         setError(error.message);
         return;
       }
-      router.push('/');
-      router.refresh();
+      window.location.href = '/';
     } catch (e) {
       setError(
         e instanceof Error

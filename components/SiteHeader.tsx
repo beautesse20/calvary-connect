@@ -1,14 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useLocale } from './LocaleProvider';
 
 export default function SiteHeader() {
   const pathname = usePathname();
-  const router = useRouter();
   const supabase = createClient();
   const { locale, dict, setLocale } = useLocale();
   const NAV_LINKS = [
@@ -54,9 +53,16 @@ export default function SiteHeader() {
   }, []);
 
   async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push('/');
-    router.refresh();
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      // Hard navigation (not router.push/refresh): forces the browser to drop
+      // the Next.js client router cache and send a brand-new request, so the
+      // middleware sees the just-cleared cookies instead of a stale cached
+      // route. Soft navigation here was leaving auth state inconsistent and
+      // blocking the next login.
+      window.location.href = '/';
+    }
   }
 
   const dashboardHref =
