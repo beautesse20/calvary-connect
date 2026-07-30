@@ -78,6 +78,7 @@ export default function MonCompteClient({
 
   const [avatar, setAvatar] = useState(avatarUrl);
   const [avatarPending, setAvatarPending] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [reviewList, setReviewList] = useState(reviews);
@@ -121,10 +122,24 @@ export default function MonCompteClient({
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setAvatarError('');
+
+    if (file.size > 8 * 1024 * 1024) {
+      setAvatarError(dict.account.photoTooLarge);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
     setAvatarPending(true);
     try {
       const res = await uploadAvatar(file);
-      if ('url' in res && res.url) setAvatar(res.url);
+      if (res.error) {
+        setAvatarError(res.error);
+      } else if ('url' in res && res.url) {
+        setAvatar(res.url);
+      }
+    } catch {
+      setAvatarError(dict.account.photoUploadError);
     } finally {
       setAvatarPending(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -198,6 +213,9 @@ export default function MonCompteClient({
                 style={{ display: 'none' }}
                 onChange={handleAvatarChange}
               />
+              {avatarError && (
+                <div style={{ fontSize: 12.5, color: 'var(--red)', marginTop: 6 }}>{avatarError}</div>
+              )}
             </div>
           </div>
 
