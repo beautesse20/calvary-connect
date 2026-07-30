@@ -2,11 +2,13 @@
 
 import { useState, useTransition } from 'react';
 import { sendContactMessage } from '@/app/contact/actions';
+import { useLocale } from './LocaleProvider';
 
 export default function GeneralContactForm() {
+  const { dict } = useLocale();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [subject, setSubject] = useState('Question générale');
+  const [subject, setSubject] = useState(dict.contact.subjectGeneral);
   const [message, setMessage] = useState('');
   const [pending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
@@ -17,9 +19,9 @@ export default function GeneralContactForm() {
     startTransition(async () => {
       const res = await sendContactMessage({ name, email, subject, message });
       if (res.error) {
-        setFeedback({ type: 'error', text: "Une erreur est survenue. Réessayez ou écrivez à contact@calvaryconnect.ca." });
+        setFeedback({ type: 'error', text: dict.contact.error });
       } else {
-        setFeedback({ type: 'success', text: 'Merci ! Votre message a bien été envoyé, réponse sous 24h maximum.' });
+        setFeedback({ type: 'success', text: dict.contact.success });
         setName('');
         setEmail('');
         setMessage('');
@@ -31,50 +33,50 @@ export default function GeneralContactForm() {
     <form className="card card-pad" onSubmit={handleSubmit}>
       {feedback && <div className={feedback.type === 'error' ? 'form-alert' : 'form-success'}>{feedback.text}</div>}
       <div className="form-group">
-        <label>Nom complet</label>
+        <label>{dict.contact.fullName}</label>
         <input
           type="text"
           className="form-control"
-          placeholder="Votre nom"
+          placeholder={dict.contact.namePlaceholder}
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
         />
       </div>
       <div className="form-group">
-        <label>Adresse courriel</label>
+        <label>{dict.auth.email}</label>
         <input
           type="email"
           className="form-control"
-          placeholder="vous@exemple.com"
+          placeholder={dict.contact.emailPlaceholder}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
         />
       </div>
       <div className="form-group">
-        <label>Sujet</label>
+        <label>{dict.contact.subject}</label>
         <select className="form-control" value={subject} onChange={(e) => setSubject(e.target.value)}>
-          <option>Question générale</option>
-          <option>Problème avec une fiche entreprise</option>
-          <option>Signalement d&apos;un avis</option>
-          <option>Question sur mon abonnement</option>
-          <option>Autre</option>
+          <option>{dict.contact.subjectGeneral}</option>
+          <option>{dict.contact.subjectBusinessIssue}</option>
+          <option>{dict.contact.subjectReport}</option>
+          <option>{dict.contact.subjectSubscription}</option>
+          <option>{dict.contact.subjectOther}</option>
         </select>
       </div>
       <div className="form-group">
-        <label>Message</label>
+        <label>{dict.contact.message}</label>
         <textarea
           className="form-control"
           style={{ minHeight: 130 }}
-          placeholder="Comment pouvons-nous vous aider ?"
+          placeholder={dict.contact.messagePlaceholder}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           required
         />
       </div>
       <button className="btn btn-primary btn-block btn-lg" type="submit" disabled={pending}>
-        {pending ? <span className="spinner" /> : 'Envoyer le message'}
+        {pending ? <span className="spinner" /> : dict.contact.send}
       </button>
     </form>
   );

@@ -2,18 +2,22 @@ import Link from 'next/link';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import { IconCheck } from '@/components/icons';
+import { getLocale } from '@/lib/i18n/get-locale';
+import { getDictionary } from '@/lib/i18n/dictionaries';
 
-export default function TarifsPage() {
+export default async function TarifsPage() {
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
+
   return (
     <>
       <SiteHeader />
       <section className="hero" style={{ paddingBottom: 24, textAlign: 'center' }}>
         <div className="container">
-          <div className="kicker">Tarifs</div>
-          <h1 style={{ margin: '0 auto' }}>Un abonnement annuel simple</h1>
+          <div className="kicker">{dict.pricing.kicker}</div>
+          <h1 style={{ margin: '0 auto' }}>{dict.pricing.title}</h1>
           <p className="lede" style={{ margin: '16px auto 0' }}>
-            Rechercher et contacter des entreprises est gratuit. Un abonnement annuel est demandé uniquement aux
-            entreprises et prestataires qui veulent apparaître dans l&apos;annuaire.
+            {dict.pricing.lede}
           </p>
         </div>
       </section>
@@ -23,69 +27,58 @@ export default function TarifsPage() {
           <div className="price-grid">
             <div className="price-card">
               <div className="badge-pill badge-registered" style={{ margin: '0 auto', display: 'inline-flex' }}>
-                Entreprise enregistrée
+                {dict.business.registered}
               </div>
               <div className="amount">
-                49,99 $<span> CAD / an</span>
+                49,99 $<span> {dict.pricing.perYear}</span>
               </div>
-              <p style={{ color: 'var(--muted)', fontSize: 13.5 }}>Pour les entreprises avec un numéro d&apos;enregistrement</p>
+              <p style={{ color: 'var(--muted)', fontSize: 13.5 }}>{dict.pricing.registeredFor}</p>
               <ul>
-                <li><IconCheck /> Fiche complète dans l&apos;annuaire</li>
-                <li><IconCheck /> Badge « Entreprise enregistrée »</li>
-                <li><IconCheck /> Réception des messages et avis</li>
-                <li><IconCheck /> Tableau de bord avec statistiques</li>
-                <li><IconCheck /> Validation par un administrateur</li>
+                <li><IconCheck /> {dict.pricing.featFull}</li>
+                <li><IconCheck /> {dict.pricing.featBadgeRegistered}</li>
+                <li><IconCheck /> {dict.pricing.featMessages}</li>
+                <li><IconCheck /> {dict.pricing.featStats}</li>
+                <li><IconCheck /> {dict.pricing.featValidation}</li>
               </ul>
               <Link href="/inscription" className="btn btn-outline btn-block btn-lg">
-                Inscrire mon entreprise
+                {dict.pricing.registerButton}
               </Link>
             </div>
 
             <div className="price-card featured">
               <div className="badge-pill badge-independent" style={{ margin: '0 auto', display: 'inline-flex' }}>
-                Professionnel indépendant
+                {dict.business.independent}
               </div>
               <div className="amount">
-                69,99 $<span> CAD / an</span>
+                69,99 $<span> {dict.pricing.perYear}</span>
               </div>
-              <p style={{ color: 'var(--muted)', fontSize: 13.5 }}>Pour les particuliers sans structure légale enregistrée</p>
+              <p style={{ color: 'var(--muted)', fontSize: 13.5 }}>{dict.pricing.independentFor}</p>
               <ul>
-                <li><IconCheck /> Fiche complète dans l&apos;annuaire</li>
-                <li><IconCheck /> Badge « Prestataire indépendant »</li>
-                <li><IconCheck /> Réception des messages et avis</li>
-                <li><IconCheck /> Tableau de bord avec statistiques</li>
-                <li><IconCheck /> Validation par un administrateur</li>
+                <li><IconCheck /> {dict.pricing.featFull}</li>
+                <li><IconCheck /> {dict.pricing.featBadgeIndependent}</li>
+                <li><IconCheck /> {dict.pricing.featMessages}</li>
+                <li><IconCheck /> {dict.pricing.featStats}</li>
+                <li><IconCheck /> {dict.pricing.featValidation}</li>
               </ul>
               <Link href="/inscription" className="btn btn-primary btn-block btn-lg">
-                Inscrire mon entreprise
+                {dict.pricing.registerButton}
               </Link>
             </div>
           </div>
 
           <div className="card card-pad" style={{ maxWidth: 820, margin: '40px auto 0' }}>
-            <h3 style={{ fontSize: 16, color: 'var(--blue-900)', marginBottom: 12 }}>Questions fréquentes</h3>
+            <h3 style={{ fontSize: 16, color: 'var(--blue-900)', marginBottom: 12 }}>{dict.pricing.faqTitle}</h3>
             <div style={{ marginBottom: 16 }}>
-              <strong style={{ fontSize: 14.5, display: 'block', marginBottom: 4 }}>
-                Le paiement a-t-il lieu avant ou après la validation ?
-              </strong>
-              <p style={{ fontSize: 13.5, color: 'var(--muted)' }}>
-                Le paiement est demandé une fois votre fiche approuvée par un administrateur — vous n&apos;êtes
-                jamais facturé pour une fiche refusée.
-              </p>
+              <strong style={{ fontSize: 14.5, display: 'block', marginBottom: 4 }}>{dict.pricing.faq1q}</strong>
+              <p style={{ fontSize: 13.5, color: 'var(--muted)' }}>{dict.pricing.faq1a}</p>
             </div>
             <div style={{ marginBottom: 16 }}>
-              <strong style={{ fontSize: 14.5, display: 'block', marginBottom: 4 }}>Puis-je annuler mon abonnement ?</strong>
-              <p style={{ fontSize: 13.5, color: 'var(--muted)' }}>
-                Oui, à tout moment depuis votre tableau de bord. Votre fiche reste visible jusqu&apos;à la fin de la
-                période payée.
-              </p>
+              <strong style={{ fontSize: 14.5, display: 'block', marginBottom: 4 }}>{dict.pricing.faq2q}</strong>
+              <p style={{ fontSize: 13.5, color: 'var(--muted)' }}>{dict.pricing.faq2a}</p>
             </div>
             <div>
-              <strong style={{ fontSize: 14.5, display: 'block', marginBottom: 4 }}>La recherche est-elle vraiment gratuite ?</strong>
-              <p style={{ fontSize: 13.5, color: 'var(--muted)' }}>
-                Oui. Créer un compte et consulter l&apos;annuaire complet est gratuit — seules les entreprises
-                inscrites paient un abonnement annuel.
-              </p>
+              <strong style={{ fontSize: 14.5, display: 'block', marginBottom: 4 }}>{dict.pricing.faq3q}</strong>
+              <p style={{ fontSize: 13.5, color: 'var(--muted)' }}>{dict.pricing.faq3a}</p>
             </div>
           </div>
         </div>

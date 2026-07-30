@@ -3,14 +3,8 @@
 import { useState } from 'react';
 import type { Business, Category, Message, Review } from '@/lib/types';
 import { updateMyBusiness } from '@/app/tableau-bord-entreprise/actions';
+import { useLocale } from './LocaleProvider';
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: 'En attente de validation',
-  approved: 'Approuvée',
-  rejected: 'Refusée',
-  deactivated: 'Désactivée',
-  suspended: 'Suspendue',
-};
 const STATUS_CLASS: Record<string, string> = {
   pending: 'status-pending',
   approved: 'status-active',
@@ -19,9 +13,15 @@ const STATUS_CLASS: Record<string, string> = {
   suspended: 'status-rejected',
 };
 
-function timeAgo(iso: string) {
+function timeAgo(iso: string, locale: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
   const hours = Math.floor(diffMs / 3600000);
+  if (locale === 'en') {
+    if (hours < 1) return 'just now';
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days} day${days > 1 ? 's' : ''} ago`;
+  }
   if (hours < 1) return "à l'instant";
   if (hours < 24) return `il y a ${hours}h`;
   const days = Math.floor(hours / 24);
@@ -39,6 +39,14 @@ export default function BusinessDashboardClient({
   messages: Message[];
   reviews: Review[];
 }) {
+  const { dict, locale } = useLocale();
+  const STATUS_LABEL: Record<string, string> = {
+    pending: dict.dashboardBusiness.statPending,
+    approved: dict.dashboardBusiness.statApproved,
+    rejected: dict.dashboardBusiness.statRejected,
+    deactivated: dict.dashboardBusiness.statDeactivated,
+    suspended: dict.dashboardBusiness.statSuspended,
+  };
   const [editing, setEditing] = useState(false);
   const [pending, setPending] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
@@ -67,9 +75,7 @@ export default function BusinessDashboardClient({
     setEditing(false);
     setFeedback({
       type: 'success',
-      text: res.revalidationTriggered
-        ? 'Fiche mise à jour. Comme elle était approuvée, elle repasse en validation administrateur avant de redevenir visible publiquement.'
-        : 'Fiche mise à jour.',
+      text: res.revalidationTriggered ? dict.dashboardBusiness.revalidationTriggered : dict.dashboardBusiness.updated,
     });
   }
 
@@ -77,15 +83,17 @@ export default function BusinessDashboardClient({
     <main className="dash-main">
       <div className="dash-head">
         <div>
-          <h1>Bonjour, {business.name}</h1>
+          <h1>
+            {dict.dashboardBusiness.hello}, {business.name}
+          </h1>
           <p>
-            Statut de votre fiche :{' '}
+            {dict.dashboardBusiness.statusLabel} :{' '}
             <span className={`status-pill ${STATUS_CLASS[business.status]}`}>{STATUS_LABEL[business.status]}</span>
           </p>
         </div>
         {!editing && (
           <button className="btn btn-primary" onClick={() => setEditing(true)}>
-            Modifier ma fiche
+            {dict.dashboardBusiness.editListing}
           </button>
         )}
       </div>
@@ -94,27 +102,27 @@ export default function BusinessDashboardClient({
 
       {business.status === 'rejected' && business.rejection_reason && (
         <div className="callout amber" style={{ marginBottom: 24 }}>
-          Votre fiche a été refusée. Motif : {business.rejection_reason}
+          {dict.dashboardBusiness.rejectedNote} : {business.rejection_reason}
         </div>
       )}
 
       {editing ? (
         <form className="card card-pad" onSubmit={handleSave} style={{ marginBottom: 28 }}>
           <div className="form-group">
-            <label>Nom de l&apos;entreprise</label>
+            <label>{dict.dashboardBusiness.businessName}</label>
             <input className="form-control" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label>Ville</label>
+              <label>{dict.dashboardBusiness.city}</label>
               <input className="form-control" value={city} onChange={(e) => setCity(e.target.value)} />
             </div>
             <div className="form-group">
-              <label>Catégorie</label>
+              <label>{dict.dashboardBusiness.category}</label>
               <select className="form-control" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name_fr}
+                    {locale === 'en' ? c.name_en : c.name_fr}
                   </option>
                 ))}
               </select>
@@ -122,32 +130,31 @@ export default function BusinessDashboardClient({
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label>Téléphone</label>
+              <label>{dict.dashboardBusiness.phone}</label>
               <input className="form-control" value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
             <div className="form-group">
-              <label>Courriel</label>
+              <label>{dict.dashboardBusiness.email}</label>
               <input className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
           </div>
           <div className="form-group">
-            <label>Site web</label>
+            <label>{dict.dashboardBusiness.website}</label>
             <input className="form-control" value={website} onChange={(e) => setWebsite(e.target.value)} />
           </div>
           <div className="form-group">
-            <label>Description</label>
+            <label>{dict.dashboardBusiness.description}</label>
             <textarea className="form-control" value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
           <div className="callout amber" style={{ marginBottom: 18 }}>
-            Si votre fiche est actuellement approuvée, l&apos;enregistrer la fera repasser en validation
-            administrateur avant qu&apos;elle ne redevienne visible publiquement.
+            {dict.dashboardBusiness.revalidationWarning}
           </div>
           <div className="step-actions">
             <button type="button" className="btn btn-outline" onClick={() => setEditing(false)}>
-              Annuler
+              {dict.dashboardBusiness.cancel}
             </button>
             <button type="submit" className="btn btn-primary" disabled={pending}>
-              {pending ? <span className="spinner" /> : 'Enregistrer'}
+              {pending ? <span className="spinner" /> : dict.dashboardBusiness.save}
             </button>
           </div>
         </form>
@@ -155,22 +162,26 @@ export default function BusinessDashboardClient({
         <div className="stat-grid">
           <div className="stat-card">
             <div className="num">{messages.length}</div>
-            <div className="lbl">Messages reçus</div>
-            <div className="delta">{unreadCount} non lu{unreadCount === 1 ? '' : 's'}</div>
+            <div className="lbl">{dict.dashboardBusiness.messagesReceived}</div>
+            <div className="delta">
+              {unreadCount} {unreadCount === 1 ? dict.dashboardBusiness.unread : dict.dashboardBusiness.unreadPlural}
+            </div>
           </div>
           <div className="stat-card">
             <div className="num">{reviews.length}</div>
-            <div className="lbl">Avis reçus</div>
-            <div className="delta">{avgRating > 0 ? `Note moyenne ${avgRating.toFixed(1)}/5` : 'Aucun avis'}</div>
+            <div className="lbl">{dict.dashboardBusiness.reviewsReceived}</div>
+            <div className="delta">
+              {avgRating > 0 ? `${dict.dashboardBusiness.averageRating} ${avgRating.toFixed(1)}/5` : dict.dashboardBusiness.noReviews}
+            </div>
           </div>
           <div className="stat-card">
             <div className="num">{business.profile_type === 'registered' ? '49,99 $' : '69,99 $'}</div>
-            <div className="lbl">Abonnement annuel (CAD)</div>
-            <div className="delta">{business.payment_status === 'active' ? 'Actif' : 'Non actif'}</div>
+            <div className="lbl">{dict.dashboardBusiness.annualSubscription}</div>
+            <div className="delta">{business.payment_status === 'active' ? dict.dashboardBusiness.active : dict.dashboardBusiness.inactive}</div>
           </div>
           <div className="stat-card">
             <div className="num">{STATUS_LABEL[business.status]}</div>
-            <div className="lbl">Statut de la fiche</div>
+            <div className="lbl">{dict.dashboardBusiness.listingStatus}</div>
           </div>
         </div>
       )}
@@ -180,31 +191,31 @@ export default function BusinessDashboardClient({
           <table>
             <thead>
               <tr>
-                <th>Message récent</th>
-                <th>De</th>
-                <th>Reçu</th>
-                <th>Statut</th>
+                <th>{dict.dashboardBusiness.recentMessage}</th>
+                <th>{dict.dashboardBusiness.from}</th>
+                <th>{dict.dashboardBusiness.received}</th>
+                <th>{dict.dashboardBusiness.status}</th>
               </tr>
             </thead>
             <tbody>
               {messages.length === 0 ? (
                 <tr>
                   <td colSpan={4} style={{ textAlign: 'center', color: 'var(--muted)' }}>
-                    Aucun message pour le moment.
+                    {dict.dashboardBusiness.noMessages}
                   </td>
                 </tr>
               ) : (
                 messages.map((m) => (
                   <tr key={m.id}>
                     <td>
-                      <div className="row-title">{m.sender_name || 'Membre'}</div>
+                      <div className="row-title">{m.sender_name || (locale === 'en' ? 'Member' : 'Membre')}</div>
                       <div className="row-sub">« {m.content.slice(0, 80)}{m.content.length > 80 ? '…' : ''} »</div>
                     </td>
                     <td>{m.sender_email}</td>
-                    <td>{timeAgo(m.created_at)}</td>
+                    <td>{timeAgo(m.created_at, locale)}</td>
                     <td>
                       <span className={`status-pill ${m.status === 'unread' ? 'status-pending' : 'status-active'}`}>
-                        {m.status === 'unread' ? 'Non lu' : 'Lu'}
+                        {m.status === 'unread' ? dict.dashboardBusiness.unreadLabel : dict.dashboardBusiness.read}
                       </span>
                     </td>
                   </tr>

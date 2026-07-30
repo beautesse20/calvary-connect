@@ -3,9 +3,11 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { IconSearch } from './icons';
+import { useLocale } from './LocaleProvider';
 
 export default function SearchBar({ initialQuery = '' }: { initialQuery?: string }) {
   const router = useRouter();
+  const { dict } = useLocale();
   const [q, setQ] = useState(initialQuery);
 
   function handleSubmit(e: React.FormEvent) {
@@ -22,10 +24,10 @@ export default function SearchBar({ initialQuery = '' }: { initialQuery?: string
         type="text"
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Rechercher un service, ou décrire votre besoin (ex. « j'ai besoin d'un comptable »)"
+        placeholder={dict.home.searchPlaceholder}
       />
       <button className="btn btn-primary btn-lg" type="submit">
-        Rechercher
+        {dict.home.searchButton}
       </button>
     </form>
   );

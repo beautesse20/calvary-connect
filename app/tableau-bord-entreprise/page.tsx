@@ -5,12 +5,16 @@ import DashSidebar from '@/components/DashSidebar';
 import BusinessDashboardClient from '@/components/BusinessDashboardClient';
 import { createClient } from '@/lib/supabase/server';
 import { getCategories } from '@/lib/data/businesses';
+import { getLocale } from '@/lib/i18n/get-locale';
+import { getDictionary } from '@/lib/i18n/dictionaries';
 import type { Business, Message, Review } from '@/lib/types';
 
 export const revalidate = 0;
 
 export default async function TableauBordEntreprisePage() {
   const supabase = await createClient();
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -32,10 +36,10 @@ export default async function TableauBordEntreprisePage() {
         <section className="section">
           <div className="container" style={{ maxWidth: 600 }}>
             <div className="empty-state">
-              <h3>Vous n&apos;avez pas encore de fiche entreprise</h3>
-              <p>Inscrivez votre entreprise ou vos services pour rejoindre l&apos;annuaire.</p>
+              <h3>{dict.inscription.noBusinessTitle}</h3>
+              <p>{dict.inscription.noBusinessText}</p>
               <Link href="/inscription" className="btn btn-primary" style={{ marginTop: 16 }}>
-                Inscrire mon entreprise
+                {dict.header.registerBusiness}
               </Link>
             </div>
           </div>
@@ -55,7 +59,7 @@ export default async function TableauBordEntreprisePage() {
       <SiteHeader />
       <div className="dash-shell">
         <DashSidebar
-          title="Statistiques"
+          title={dict.dashboardBusiness.sidebarStats}
           icon={
             <svg className="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
               <line x1="12" y1="20" x2="12" y2="10" />

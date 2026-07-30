@@ -7,17 +7,21 @@ import ContactBusinessForm from '@/components/ContactBusinessForm';
 import { CategoryIcon, IconStarFilled, IconLock } from '@/components/icons';
 import { createClient } from '@/lib/supabase/server';
 import { getBusinessById } from '@/lib/data/businesses';
+import { getLocale } from '@/lib/i18n/get-locale';
+import { getDictionary } from '@/lib/i18n/dictionaries';
 import type { Review } from '@/lib/types';
 
 export const revalidate = 0;
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('fr-CA', { year: 'numeric', month: 'long' });
+function formatDate(iso: string, locale: string) {
+  return new Date(iso).toLocaleDateString(locale === 'en' ? 'en-CA' : 'fr-CA', { year: 'numeric', month: 'long' });
 }
 
 export default async function BusinessDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
 
   const [{ data: { user } }, business] = await Promise.all([supabase.auth.getUser(), getBusinessById(id)]);
 
@@ -35,7 +39,9 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
   const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
 
   const alreadyReviewed = user ? reviews.some((r) => r.author_id === user.id) : false;
-  const badgeLabel = business.profile_type === 'registered' ? 'Entreprise enregistrée' : 'Professionnel indépendant';
+  const badgeLabel = business.profile_type === 'registered' ? dict.business.registered : dict.business.independent;
+  const categoryName = business.categories ? (locale === 'en' ? business.categories.name_en : business.categories.name_fr) : null;
+  const bcName = locale === 'en' ? 'British Columbia' : 'Colombie-Britannique';
 
   return (
     <>
@@ -57,7 +63,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                   )}
                   {badgeLabel}
                 </span>
-                {business.categories && <span className="badge-pill badge-independent">{business.categories.name_fr}</span>}
+                {categoryName && <span className="badge-pill badge-independent">{categoryName}</span>}
               </div>
               <div className="stars" style={{ fontSize: 15 }}>
                 {reviews.length > 0 ? (
@@ -65,12 +71,14 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                     <IconStarFilled width={16} height={16} />
                     {avgRating.toFixed(1)}/5{' '}
                     <span className="count">
-                      · {reviews.length} avis{business.city ? ` · ${business.city}, ${business.region || 'BC'}` : ''}
+                      · {reviews.length} {dict.business.reviewsWord}
+                      {business.city ? ` · ${business.city}, ${business.region || 'BC'}` : ''}
                     </span>
                   </>
                 ) : (
                   <span className="count">
-                    Pas encore d&apos;avis{business.city ? ` · ${business.city}, ${business.region || 'BC'}` : ''}
+                    {dict.business.noRatingYet}
+                    {business.city ? ` · ${business.city}, ${business.region || 'BC'}` : ''}
                   </span>
                 )}
               </div>
@@ -83,30 +91,28 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
         <div className="container">
           <div className="detail-grid">
             <div>
-              <h2 style={{ fontSize: 19, color: 'var(--blue-900)', marginBottom: 12 }}>À propos</h2>
+              <h2 style={{ fontSize: 19, color: 'var(--blue-900)', marginBottom: 12 }}>{dict.business.about}</h2>
               <p style={{ color: 'var(--muted)', fontSize: 15, lineHeight: 1.7 }}>
-                {business.description || 'Aucune description fournie pour le moment.'}
+                {business.description || dict.business.noDescription}
               </p>
 
               <div style={{ marginTop: 28 }}>
                 <h2 style={{ fontSize: 19, color: 'var(--blue-900)', marginBottom: 16 }}>
-                  Avis des membres ({reviews.length})
+                  {dict.business.reviews} ({reviews.length})
                 </h2>
 
                 {reviews.length === 0 && (
-                  <p style={{ color: 'var(--muted)', fontSize: 14 }}>
-                    Aucun avis pour le moment. Soyez le premier à partager votre expérience.
-                  </p>
+                  <p style={{ color: 'var(--muted)', fontSize: 14 }}>{dict.business.noReviews}</p>
                 )}
 
                 {reviews.slice(0, 10).map((r) => (
                   <div className="review-item" key={r.id}>
                     <div className="review-head">
-                      <span className="who">Membre</span>
+                      <span className="who">{locale === 'en' ? 'Member' : 'Membre'}</span>
                       <span className="stars">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</span>
                     </div>
                     {r.comment && <p>{r.comment}</p>}
-                    <span className="review-date">{formatDate(r.created_at)}</span>
+                    <span className="review-date">{formatDate(r.created_at, locale)}</span>
                   </div>
                 ))}
 
@@ -121,21 +127,21 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                     <div className="icon">
                       <IconLock width={28} height={28} />
                     </div>
-                    <strong>Coordonnées réservées aux membres</strong>
-                    <p>Connectez-vous gratuitement pour voir le téléphone, le courriel et contacter directement l&apos;entreprise.</p>
+                    <strong>{dict.business.contactLocked}</strong>
+                    <p>{dict.business.contactLockedText}</p>
                     <Link href="/connexion" className="btn btn-primary btn-block btn-sm">
-                      Se connecter
+                      {dict.business.login}
                     </Link>
                     <div style={{ marginTop: 8, fontSize: 12.5, color: 'var(--muted)' }}>
-                      Pas encore de compte ?{' '}
+                      {dict.business.noAccountYet}{' '}
                       <Link href="/creer-compte" style={{ color: 'var(--blue-700)', fontWeight: 700 }}>
-                        Créer un compte gratuit
+                        {dict.business.createFreeAccount}
                       </Link>
                     </div>
                   </div>
                 ) : (
                   <div>
-                    <strong style={{ fontSize: 14.5, display: 'block', marginBottom: 10 }}>Contacter cette entreprise</strong>
+                    <strong style={{ fontSize: 14.5, display: 'block', marginBottom: 10 }}>{dict.business.contactThisBusiness}</strong>
                     <ContactBusinessForm businessId={business.id} />
                   </div>
                 )}
@@ -147,7 +153,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                       <circle cx="12" cy="10" r="3" />
                     </svg>
                     <div>
-                      <strong>{business.city ? `${business.city}, Colombie-Britannique` : 'Colombie-Britannique'}</strong>
+                      <strong>{business.city ? `${business.city}, ${bcName}` : bcName}</strong>
                     </div>
                   </div>
                   <div className="info-line">
@@ -155,8 +161,8 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                       <circle cx="12" cy="12" r="10" />
                     </svg>
                     <div>
-                      <strong>Site web</strong>
-                      <span>{user ? business.website || 'Non fourni' : 'Visible après connexion'}</span>
+                      <strong>{dict.business.website}</strong>
+                      <span>{user ? business.website || dict.business.notProvided : dict.business.visibleAfterLogin}</span>
                     </div>
                   </div>
                   <div className="info-line">
@@ -165,8 +171,8 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                       <rect x="2" y="4" width="20" height="16" rx="2" />
                     </svg>
                     <div>
-                      <strong>Courriel</strong>
-                      <span>{user ? business.email || 'Non fourni' : 'Visible après connexion'}</span>
+                      <strong>{dict.business.email}</strong>
+                      <span>{user ? business.email || dict.business.notProvided : dict.business.visibleAfterLogin}</span>
                     </div>
                   </div>
                   {user && business.phone && (
@@ -175,7 +181,7 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
                       </svg>
                       <div>
-                        <strong>Téléphone</strong>
+                        <strong>{dict.business.phone}</strong>
                         <span>{business.phone}</span>
                       </div>
                     </div>
@@ -184,10 +190,10 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
               </div>
 
               <div className="card card-pad" style={{ marginTop: 16 }}>
-                <strong style={{ fontSize: 14, display: 'block', marginBottom: 10 }}>Membre de la communauté</strong>
+                <strong style={{ fontSize: 14, display: 'block', marginBottom: 10 }}>{dict.business.communityMember}</strong>
                 <p style={{ fontSize: 13, color: 'var(--muted)' }}>
-                  {business.community || 'Calvary Worship Center'} · Inscrite depuis {formatDate(business.created_at)} · Fiche
-                  validée par un administrateur
+                  {business.community || 'Calvary Worship Center'} · {dict.business.memberSince}{' '}
+                  {formatDate(business.created_at, locale)} · {dict.business.validatedByAdmin}
                 </p>
               </div>
             </div>

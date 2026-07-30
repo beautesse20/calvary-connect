@@ -1,6 +1,10 @@
+'use client';
+
 import Link from 'next/link';
+import { useLocale } from './LocaleProvider';
 
 export default function SiteFooter() {
+  const { dict } = useLocale();
   return (
     <footer className="site-footer">
       <div className="container">
@@ -9,34 +13,33 @@ export default function SiteFooter() {
             <div className="brand">
               <span className="mark">CC</span> Calvary Connect
             </div>
-            <p className="desc">
-              L&apos;annuaire des entreprises et professionnels de la communauté de Calvary Worship Center, en
-              Colombie-Britannique.
-            </p>
+            <p className="desc">{dict.footer.tagline}</p>
           </div>
           <div className="footer-col">
-            <h4>Navigation</h4>
-            <Link href="/">Accueil</Link>
-            <Link href="/categories">Catégories</Link>
-            <Link href="/tarifs">Tarifs</Link>
-            <Link href="/a-propos">À propos</Link>
+            <h4>{dict.footer.navigation}</h4>
+            <Link href="/">{dict.nav.home}</Link>
+            <Link href="/categories">{dict.nav.categories}</Link>
+            <Link href="/tarifs">{dict.nav.pricing}</Link>
+            <Link href="/a-propos">{dict.nav.about}</Link>
           </div>
           <div className="footer-col">
-            <h4>Entreprises</h4>
-            <Link href="/inscription">Inscrire mon entreprise</Link>
-            <Link href="/connexion">Connexion</Link>
-            <Link href="/tableau-bord-entreprise">Tableau de bord</Link>
+            <h4>{dict.footer.businesses}</h4>
+            <Link href="/inscription">{dict.header.registerBusiness}</Link>
+            <Link href="/connexion">{dict.header.login}</Link>
+            <Link href="/tableau-bord-entreprise">{dict.footer.dashboard}</Link>
           </div>
           <div className="footer-col">
-            <h4>Contact</h4>
+            <h4>{dict.footer.contact}</h4>
             <p>contact@calvaryconnect.ca</p>
-            <p>Réponse sous 24h maximum</p>
-            <Link href="/contact">Formulaire de contact</Link>
+            <p>{dict.footer.responseTime}</p>
+            <Link href="/contact">{dict.footer.contactForm}</Link>
           </div>
         </div>
         <div className="footer-bottom">
-          <span>© {new Date().getFullYear()} Calvary Connect. Tous droits réservés.</span>
-          <span>Calvary Worship Center · Colombie-Britannique, Canada</span>
+          <span>
+            © {new Date().getFullYear()} Calvary Connect. {dict.footer.rights}
+          </span>
+          <span>{dict.footer.community}</span>
         </div>
       </div>
     </footer>

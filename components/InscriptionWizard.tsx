@@ -1,15 +1,25 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { Category, ProfileType } from '@/lib/types';
+import type { Locale } from '@/lib/i18n/dictionaries';
 import { registerBusiness, uploadDocument, uploadLogo } from '@/app/inscription/actions';
+import { useLocale } from './LocaleProvider';
 
-const STEPS = ['Profil', 'Infos de base', 'Catégorie', 'Documents'];
+export default function InscriptionWizard({
+  userId,
+  categories,
+  locale: initialLocale,
+}: {
+  userId: string;
+  categories: Category[];
+  locale?: Locale;
+}) {
+  const { dict, locale: contextLocale } = useLocale();
+  const locale = contextLocale || initialLocale || 'fr';
+  const STEPS = [dict.inscription.step1, dict.inscription.step2, dict.inscription.step3, dict.inscription.step4];
 
-export default function InscriptionWizard({ userId, categories }: { userId: string; categories: Category[] }) {
-  const router = useRouter();
   const [step, setStep] = useState(1);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +47,7 @@ export default function InscriptionWizard({ userId, categories }: { userId: stri
   async function handleSubmit() {
     setError(null);
     if (!name.trim()) {
-      setError('Le nom de l’entreprise est requis.');
+      setError(dict.inscription.nameRequired);
       setStep(2);
       return;
     }
@@ -79,7 +89,7 @@ export default function InscriptionWizard({ userId, categories }: { userId: stri
 
       setDone({ profileType, price });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Une erreur est survenue. Réessayez.");
+      setError(e instanceof Error ? e.message : dict.inscription.genericError);
     } finally {
       setPending(false);
     }
@@ -89,21 +99,20 @@ export default function InscriptionWizard({ userId, categories }: { userId: stri
     return (
       <div className="card card-pad" style={{ textAlign: 'center' }}>
         <div className="modal-box" style={{ boxShadow: 'none', padding: 0 }}>
-          <div
-            className="icon-wrap"
-            style={{ background: 'var(--green-bg)', color: 'var(--green)' }}
-          >
+          <div className="icon-wrap" style={{ background: 'var(--green-bg)', color: 'var(--green)' }}>
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
-          <h3>Fiche soumise pour validation</h3>
+          <h3>{dict.inscription.submittedTitle}</h3>
           <p>
-            Merci ! Votre fiche « {name} » a été envoyée à un administrateur. Vous recevrez un courriel une fois la
-            validation effectuée, puis un lien de paiement ({price} / an).
+            {locale === 'en' ? 'Thank you! Your listing "' : 'Merci ! Votre fiche « '}
+            {name}
+            {locale === 'en' ? '" ' : ' » '}
+            {dict.inscription.submittedText} ({price} {locale === 'en' ? '/ year' : '/ an'}).
           </p>
           <Link href="/tableau-bord-entreprise" className="btn btn-primary btn-block">
-            Aller à mon tableau de bord
+            {dict.inscription.goToDashboard}
           </Link>
         </div>
       </div>
@@ -126,7 +135,7 @@ export default function InscriptionWizard({ userId, categories }: { userId: stri
 
         {step === 1 && (
           <div className="step-panel active">
-            <h2 style={{ fontSize: 18, marginBottom: 16 }}>Quel type de profil correspond à votre situation ?</h2>
+            <h2 style={{ fontSize: 18, marginBottom: 16 }}>{dict.inscription.profileQuestion}</h2>
 
             <div
               className={`radio-card${profileType === 'registered' ? ' selected' : ''}`}
@@ -135,21 +144,16 @@ export default function InscriptionWizard({ userId, categories }: { userId: stri
             >
               <div className="dot"></div>
               <div>
-                <strong>Entreprise enregistrée</strong>
-                <span className="d">
-                  J&apos;ai un numéro d&apos;entreprise et je peux fournir un document d&apos;enregistrement. Abonnement : 49,99 $
-                  CAD / an.
-                </span>
+                <strong>{dict.inscription.registeredTitle}</strong>
+                <span className="d">{dict.inscription.registeredDesc}</span>
               </div>
             </div>
 
             <div className={`radio-card${profileType === 'independent' ? ' selected' : ''}`} onClick={() => setProfileType('independent')}>
               <div className="dot"></div>
               <div>
-                <strong>Professionnel indépendant / particulier</strong>
-                <span className="d">
-                  Je propose un service ou une compétence sans structure légale enregistrée. Abonnement : 69,99 $ CAD / an.
-                </span>
+                <strong>{dict.inscription.independentTitle}</strong>
+                <span className="d">{dict.inscription.independentDesc}</span>
               </div>
             </div>
 
@@ -159,14 +163,13 @@ export default function InscriptionWizard({ userId, categories }: { userId: stri
                 <line x1="12" y1="16" x2="12" y2="12" />
                 <line x1="12" y1="8" x2="12.01" y2="8" />
               </svg>
-              Les deux profils passent par la même validation par un administrateur : identité vérifiée, appartenance
-              à la communauté, description honnête des services.
+              {dict.inscription.profileCallout}
             </div>
 
             <div className="step-actions">
               <span></span>
               <button className="btn btn-primary" onClick={() => goTo(2)} type="button">
-                Continuer
+                {dict.inscription.continue}
               </button>
             </div>
           </div>
@@ -174,37 +177,37 @@ export default function InscriptionWizard({ userId, categories }: { userId: stri
 
         {step === 2 && (
           <div className="step-panel active">
-            <h2 style={{ fontSize: 18, marginBottom: 16 }}>Informations de base</h2>
+            <h2 style={{ fontSize: 18, marginBottom: 16 }}>{dict.inscription.basicInfoTitle}</h2>
 
             <div className="form-group">
-              <label>Nom de l&apos;entreprise ou du prestataire</label>
-              <input type="text" className="form-control" placeholder="Ex. Rénovations Lambert" value={name} onChange={(e) => setName(e.target.value)} />
+              <label>{dict.inscription.businessName}</label>
+              <input type="text" className="form-control" placeholder={dict.inscription.businessNamePlaceholder} value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label>Nom du responsable</label>
-                <input type="text" className="form-control" placeholder="Prénom et nom" value={managerName} onChange={(e) => setManagerName(e.target.value)} />
+                <label>{dict.inscription.managerName}</label>
+                <input type="text" className="form-control" placeholder={dict.inscription.managerNamePlaceholder} value={managerName} onChange={(e) => setManagerName(e.target.value)} />
               </div>
               <div className="form-group">
-                <label>Ville</label>
-                <input type="text" className="form-control" placeholder="Ex. Surrey, BC" value={city} onChange={(e) => setCity(e.target.value)} />
+                <label>{dict.inscription.city}</label>
+                <input type="text" className="form-control" placeholder={dict.inscription.cityPlaceholder} value={city} onChange={(e) => setCity(e.target.value)} />
               </div>
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label>Téléphone</label>
+                <label>{dict.inscription.phone}</label>
                 <input type="text" className="form-control" placeholder="(604) 000-0000" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </div>
               <div className="form-group">
-                <label>Courriel</label>
+                <label>{dict.inscription.email}</label>
                 <input type="text" className="form-control" placeholder="contact@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
             </div>
             <div className="form-group">
-              <label>Description du service</label>
+              <label>{dict.inscription.description}</label>
               <textarea
                 className="form-control"
-                placeholder="Décrivez votre entreprise et les services offerts..."
+                placeholder={dict.inscription.descriptionPlaceholder}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
@@ -212,10 +215,10 @@ export default function InscriptionWizard({ userId, categories }: { userId: stri
 
             <div className="step-actions">
               <button className="btn btn-outline" onClick={() => goTo(1)} type="button">
-                Retour
+                {dict.inscription.back}
               </button>
               <button className="btn btn-primary" onClick={() => goTo(3)} type="button">
-                Continuer
+                {dict.inscription.continue}
               </button>
             </div>
           </div>
@@ -223,20 +226,20 @@ export default function InscriptionWizard({ userId, categories }: { userId: stri
 
         {step === 3 && (
           <div className="step-panel active">
-            <h2 style={{ fontSize: 18, marginBottom: 16 }}>Catégorie de service</h2>
+            <h2 style={{ fontSize: 18, marginBottom: 16 }}>{dict.inscription.categoryTitle}</h2>
 
             <div className="form-group">
-              <label>Catégorie principale</label>
+              <label>{dict.inscription.mainCategory}</label>
               <select className="form-control" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name_fr}
+                    {locale === 'en' ? c.name_en : c.name_fr}
                   </option>
                 ))}
               </select>
             </div>
             <div className="form-group">
-              <label>Logo ou photo de l&apos;entreprise</label>
+              <label>{dict.inscription.logo}</label>
               <label className="upload-box" style={{ display: 'block', cursor: 'pointer' }}>
                 <div className="icon" style={{ margin: '0 auto' }}>
                   <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -245,18 +248,18 @@ export default function InscriptionWizard({ userId, categories }: { userId: stri
                     <line x1="12" y1="3" x2="12" y2="15" />
                   </svg>
                 </div>
-                <strong>{logoFile ? logoFile.name : 'Glissez une image ou cliquez pour parcourir'}</strong>
-                <span>PNG ou JPG, 5 Mo maximum</span>
+                <strong>{logoFile ? logoFile.name : dict.inscription.uploadPrompt}</strong>
+                <span>{dict.inscription.uploadHint}</span>
                 <input type="file" accept="image/png,image/jpeg" style={{ display: 'none' }} onChange={(e) => setLogoFile(e.target.files?.[0] || null)} />
               </label>
             </div>
 
             <div className="step-actions">
               <button className="btn btn-outline" onClick={() => goTo(2)} type="button">
-                Retour
+                {dict.inscription.back}
               </button>
               <button className="btn btn-primary" onClick={() => goTo(4)} type="button">
-                Continuer
+                {dict.inscription.continue}
               </button>
             </div>
           </div>
@@ -264,11 +267,8 @@ export default function InscriptionWizard({ userId, categories }: { userId: stri
 
         {step === 4 && (
           <div className="step-panel active">
-            <h2 style={{ fontSize: 18, marginBottom: 6 }}>Documents justificatifs</h2>
-            <p style={{ color: 'var(--muted)', fontSize: 13.5, marginBottom: 16 }}>
-              Ces documents sont visibles uniquement par les administrateurs — jamais publics. Ils servent uniquement
-              à la validation de votre fiche.
-            </p>
+            <h2 style={{ fontSize: 18, marginBottom: 6 }}>{dict.inscription.documentsTitle}</h2>
+            <p style={{ color: 'var(--muted)', fontSize: 13.5, marginBottom: 16 }}>{dict.inscription.documentsText}</p>
 
             <label className="upload-box" style={{ display: 'block', marginBottom: 14, cursor: 'pointer' }}>
               <div className="icon" style={{ margin: '0 auto' }}>
@@ -277,8 +277,8 @@ export default function InscriptionWizard({ userId, categories }: { userId: stri
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
               </div>
-              <strong>{regDoc ? regDoc.name : "Numéro d'entreprise / document d'enregistrement"}</strong>
-              <span>PDF, PNG ou JPG</span>
+              <strong>{regDoc ? regDoc.name : dict.inscription.docRegistration}</strong>
+              <span>{dict.inscription.docHint}</span>
               <input type="file" accept="application/pdf,image/png,image/jpeg" style={{ display: 'none' }} onChange={(e) => setRegDoc(e.target.files?.[0] || null)} />
             </label>
 
@@ -289,8 +289,8 @@ export default function InscriptionWizard({ userId, categories }: { userId: stri
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
               </div>
-              <strong>{idDoc ? idDoc.name : "Pièce d'identité (facultatif selon profil)"}</strong>
-              <span>PDF, PNG ou JPG</span>
+              <strong>{idDoc ? idDoc.name : dict.inscription.docId}</strong>
+              <span>{dict.inscription.docHint}</span>
               <input type="file" accept="application/pdf,image/png,image/jpeg" style={{ display: 'none' }} onChange={(e) => setIdDoc(e.target.files?.[0] || null)} />
             </label>
 
@@ -300,32 +300,29 @@ export default function InscriptionWizard({ userId, categories }: { userId: stri
                 <line x1="12" y1="9" x2="12" y2="13" />
                 <line x1="12" y1="17" x2="12.01" y2="17" />
               </svg>
-              Une fois votre fiche approuvée, toute modification future devra repasser par une nouvelle validation.
-              Assurez-vous que tout est exact avant de soumettre.
+              {dict.inscription.revalidationWarning}
             </div>
 
             <div className="card" style={{ background: 'var(--blue-50)', borderColor: 'var(--blue-100)', padding: 20, marginTop: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ fontSize: 14, color: 'var(--muted)' }}>Type de profil</span>
+                <span style={{ fontSize: 14, color: 'var(--muted)' }}>{dict.inscription.profileType}</span>
                 <strong style={{ fontSize: 14 }}>
-                  {profileType === 'registered' ? 'Entreprise enregistrée' : 'Professionnel indépendant'}
+                  {profileType === 'registered' ? dict.inscription.registeredTitle : dict.inscription.independentTitle}
                 </strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 10, borderTop: '1px solid var(--blue-100)' }}>
-                <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--blue-900)' }}>Abonnement annuel</span>
+                <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--blue-900)' }}>{dict.inscription.annualSubscription}</span>
                 <strong style={{ fontSize: 15, color: 'var(--blue-900)' }}>{price}</strong>
               </div>
             </div>
-            <p style={{ fontSize: 12.5, color: 'var(--muted-2)', marginTop: 8 }}>
-              Le paiement vous sera demandé par courriel une fois votre fiche approuvée par un administrateur.
-            </p>
+            <p style={{ fontSize: 12.5, color: 'var(--muted-2)', marginTop: 8 }}>{dict.inscription.paymentNote}</p>
 
             <div className="step-actions">
               <button className="btn btn-outline" onClick={() => goTo(3)} type="button">
-                Retour
+                {dict.inscription.back}
               </button>
               <button className="btn btn-primary btn-lg" onClick={handleSubmit} disabled={pending} type="button">
-                {pending ? <span className="spinner" /> : 'Soumettre pour validation'}
+                {pending ? <span className="spinner" /> : dict.inscription.submit}
               </button>
             </div>
           </div>

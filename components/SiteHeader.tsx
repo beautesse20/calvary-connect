@@ -4,19 +4,20 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-
-const NAV_LINKS = [
-  { href: '/', label: 'Accueil' },
-  { href: '/categories', label: 'Catégories' },
-  { href: '/tarifs', label: 'Tarifs' },
-  { href: '/a-propos', label: 'À propos' },
-  { href: '/contact', label: 'Contact' },
-];
+import { useLocale } from './LocaleProvider';
 
 export default function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
+  const { locale, dict, setLocale } = useLocale();
+  const NAV_LINKS = [
+    { href: '/', label: dict.nav.home },
+    { href: '/categories', label: dict.nav.categories },
+    { href: '/tarifs', label: dict.nav.pricing },
+    { href: '/a-propos', label: dict.nav.about },
+    { href: '/contact', label: dict.nav.contact },
+  ];
   const [open, setOpen] = useState(false);
   const [session, setSession] = useState<'loading' | 'out' | 'user' | 'business' | 'admin' | 'super_admin'>(
     'loading'
@@ -77,25 +78,29 @@ export default function SiteHeader() {
           </nav>
           <div className="header-actions">
             <div className="lang-switch">
-              <span className="active">FR</span>
-              <span>EN</span>
+              <span className={locale === 'fr' ? 'active' : ''} role="button" onClick={() => setLocale('fr')}>
+                FR
+              </span>
+              <span className={locale === 'en' ? 'active' : ''} role="button" onClick={() => setLocale('en')}>
+                EN
+              </span>
             </div>
             {session === 'out' || session === 'loading' ? (
               <>
                 <Link href="/connexion" className="btn btn-ghost btn-sm">
-                  Connexion
+                  {dict.header.login}
                 </Link>
                 <Link href="/inscription" className="btn btn-primary btn-sm">
-                  Inscrire mon entreprise
+                  {dict.header.registerBusiness}
                 </Link>
               </>
             ) : (
               <>
                 <Link href={dashboardHref} className="btn btn-ghost btn-sm">
-                  Tableau de bord
+                  {dict.header.dashboard}
                 </Link>
                 <button className="btn btn-outline btn-sm" onClick={handleLogout}>
-                  Déconnexion
+                  {dict.header.logout}
                 </button>
               </>
             )}
@@ -117,16 +122,16 @@ export default function SiteHeader() {
           {session === 'out' || session === 'loading' ? (
             <>
               <Link href="/connexion" className="btn btn-outline btn-block" onClick={() => setOpen(false)}>
-                Connexion
+                {dict.header.login}
               </Link>
               <Link href="/inscription" className="btn btn-primary btn-block" onClick={() => setOpen(false)}>
-                Inscrire mon entreprise
+                {dict.header.registerBusiness}
               </Link>
             </>
           ) : (
             <>
               <Link href={dashboardHref} className="btn btn-outline btn-block" onClick={() => setOpen(false)}>
-                Tableau de bord
+                {dict.header.dashboard}
               </Link>
               <button
                 className="btn btn-primary btn-block"
@@ -135,7 +140,7 @@ export default function SiteHeader() {
                   handleLogout();
                 }}
               >
-                Déconnexion
+                {dict.header.logout}
               </button>
             </>
           )}

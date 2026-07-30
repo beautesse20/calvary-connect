@@ -3,8 +3,10 @@
 import { useState, useTransition } from 'react';
 import { submitReview } from '@/app/entreprises/[id]/actions';
 import { IconStarFilled } from './icons';
+import { useLocale } from './LocaleProvider';
 
 export default function ReviewForm({ businessId }: { businessId: string }) {
+  const { dict } = useLocale();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [pending, startTransition] = useTransition();
@@ -18,7 +20,7 @@ export default function ReviewForm({ businessId }: { businessId: string }) {
       if (res.error) {
         setMessage({ type: 'error', text: res.error });
       } else {
-        setMessage({ type: 'success', text: 'Merci, votre avis a été publié.' });
+        setMessage({ type: 'success', text: dict.business.reviewSuccess });
         setComment('');
       }
     });
@@ -26,11 +28,11 @@ export default function ReviewForm({ businessId }: { businessId: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="card card-pad" style={{ marginTop: 18 }}>
-      <strong style={{ fontSize: 14.5, display: 'block', marginBottom: 10 }}>Laisser un avis</strong>
+      <strong style={{ fontSize: 14.5, display: 'block', marginBottom: 10 }}>{dict.business.leaveReview}</strong>
       {message && <div className={message.type === 'error' ? 'form-alert' : 'form-success'}>{message.text}</div>}
       <div className="rating-input" style={{ marginBottom: 14 }}>
         {[1, 2, 3, 4, 5].map((n) => (
-          <button type="button" key={n} className={n <= rating ? 'filled' : ''} onClick={() => setRating(n)} aria-label={`${n} étoiles`}>
+          <button type="button" key={n} className={n <= rating ? 'filled' : ''} onClick={() => setRating(n)} aria-label={`${n} stars`}>
             <IconStarFilled width={22} height={22} />
           </button>
         ))}
@@ -38,14 +40,14 @@ export default function ReviewForm({ businessId }: { businessId: string }) {
       <div className="form-group">
         <textarea
           className="form-control"
-          placeholder="Décrivez votre expérience avec cette entreprise..."
+          placeholder={dict.business.reviewPlaceholder}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           required
         />
       </div>
       <button className="btn btn-primary" type="submit" disabled={pending}>
-        {pending ? <span className="spinner" /> : 'Publier mon avis'}
+        {pending ? <span className="spinner" /> : dict.business.publishReview}
       </button>
     </form>
   );

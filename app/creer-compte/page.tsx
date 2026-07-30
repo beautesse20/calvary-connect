@@ -6,10 +6,12 @@ import { useState } from 'react';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import { createClient } from '@/lib/supabase/client';
+import { useLocale } from '@/components/LocaleProvider';
 
 export default function CreerComptePage() {
   const router = useRouter();
   const supabase = createClient();
+  const { dict } = useLocale();
   const [prenom, setPrenom] = useState('');
   const [nom, setNom] = useState('');
   const [email, setEmail] = useState('');
@@ -22,11 +24,11 @@ export default function CreerComptePage() {
     e.preventDefault();
     setError(null);
     if (!accept) {
-      setError("Vous devez accepter les conditions d'utilisation.");
+      setError(dict.auth.mustAcceptTerms);
       return;
     }
     if (password.length < 8) {
-      setError('Le mot de passe doit contenir au moins 8 caractères.');
+      setError(dict.auth.passwordTooShort);
       return;
     }
     setPending(true);
@@ -52,23 +54,23 @@ export default function CreerComptePage() {
           <div className="mark" style={{ width: 48, height: 48, borderRadius: 12, margin: '0 auto 18px', fontSize: 18 }}>
             CC
           </div>
-          <h1>Créer un compte gratuit</h1>
-          <p className="sub">Accédez aux coordonnées complètes de l&apos;annuaire et contactez les entreprises de la communauté.</p>
+          <h1>{dict.auth.signupTitle}</h1>
+          <p className="sub">{dict.auth.signupSub}</p>
 
           <form onSubmit={handleSubmit}>
             {error && <div className="form-alert">{error}</div>}
             <div className="form-row">
               <div className="form-group">
-                <label>Prénom</label>
-                <input type="text" className="form-control" placeholder="Prénom" value={prenom} onChange={(e) => setPrenom(e.target.value)} required />
+                <label>{dict.auth.firstName}</label>
+                <input type="text" className="form-control" placeholder={dict.auth.firstName} value={prenom} onChange={(e) => setPrenom(e.target.value)} required />
               </div>
               <div className="form-group">
-                <label>Nom</label>
-                <input type="text" className="form-control" placeholder="Nom" value={nom} onChange={(e) => setNom(e.target.value)} required />
+                <label>{dict.auth.lastName}</label>
+                <input type="text" className="form-control" placeholder={dict.auth.lastName} value={nom} onChange={(e) => setNom(e.target.value)} required />
               </div>
             </div>
             <div className="form-group">
-              <label>Adresse courriel</label>
+              <label>{dict.auth.email}</label>
               <input
                 type="email"
                 className="form-control"
@@ -79,11 +81,11 @@ export default function CreerComptePage() {
               />
             </div>
             <div className="form-group">
-              <label>Mot de passe</label>
+              <label>{dict.auth.password}</label>
               <input
                 type="password"
                 className="form-control"
-                placeholder="8 caractères minimum"
+                placeholder={dict.auth.passwordHint}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -97,16 +99,16 @@ export default function CreerComptePage() {
                 onChange={(e) => setAccept(e.target.checked)}
                 style={{ width: 16, height: 16 }}
               />
-              <span>J&apos;accepte les conditions d&apos;utilisation et la politique de confidentialité.</span>
+              <span>{dict.auth.acceptTerms}</span>
             </div>
 
             <button className="btn btn-primary btn-block btn-lg" type="submit" disabled={pending}>
-              {pending ? <span className="spinner" /> : 'Créer mon compte'}
+              {pending ? <span className="spinner" /> : dict.auth.createAccountButton}
             </button>
           </form>
 
           <div className="auth-foot">
-            Déjà un compte ? <Link href="/connexion">Se connecter</Link>
+            {dict.auth.alreadyAccount} <Link href="/connexion">{dict.auth.login}</Link>
           </div>
         </div>
       </div>

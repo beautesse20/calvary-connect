@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { useLocale } from './LocaleProvider';
 
 export default function DashSidebar({
   title,
@@ -12,6 +13,7 @@ export default function DashSidebar({
 }) {
   const router = useRouter();
   const supabase = createClient();
+  const { dict } = useLocale();
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -34,7 +36,7 @@ export default function DashSidebar({
           <polyline points="16 17 21 12 16 7" />
           <line x1="21" y1="12" x2="9" y2="12" />
         </svg>
-        Se déconnecter
+        {dict.dashboardBusiness.logout}
       </a>
     </aside>
   );

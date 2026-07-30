@@ -6,6 +6,8 @@ import BusinessCard from '@/components/BusinessCard';
 import { CategoryIcon } from '@/components/icons';
 import { createClient } from '@/lib/supabase/server';
 import { getCategories, searchBusinesses } from '@/lib/data/businesses';
+import { getLocale } from '@/lib/i18n/get-locale';
+import { getDictionary } from '@/lib/i18n/dictionaries';
 
 export const revalidate = 0;
 
@@ -13,6 +15,8 @@ const POPULAR_SLUGS = ['construction', 'automobile', 'sante', 'finance', 'juridi
 
 export default async function HomePage() {
   const supabase = await createClient();
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -31,19 +35,16 @@ export default async function HomePage() {
       <SiteHeader />
       <section className="hero">
         <div className="container">
-          <h1>Trouvez un service de confiance dans votre communauté</h1>
-          <p className="lede">
-            Calvary Connect recense les entreprises et professionnels de la communauté de Calvary Worship Center en
-            Colombie-Britannique.
-          </p>
+          <h1>{dict.home.title}</h1>
+          <p className="lede">{dict.home.lede}</p>
           <SearchBar />
           <div className="filters-row">
             <Link href="/categories" className="chip">
-              Catégorie ▾
+              {dict.home.filterCategory}
             </Link>
-            <span className="chip">Ville ▾</span>
-            <span className="chip">Note minimum ▾</span>
-            <span className="chip">Type de profil ▾</span>
+            <span className="chip">{dict.home.filterCity}</span>
+            <span className="chip">{dict.home.filterRating}</span>
+            <span className="chip">{dict.home.filterProfile}</span>
           </div>
         </div>
       </section>
@@ -52,11 +53,11 @@ export default async function HomePage() {
         <div className="container">
           <div className="section-head">
             <div>
-              <div className="kicker">Parcourir</div>
-              <h2>Catégories populaires</h2>
+              <div className="kicker">{dict.home.browse}</div>
+              <h2>{dict.home.popularCategories}</h2>
             </div>
             <Link href="/categories" className="btn btn-outline btn-sm">
-              Voir toutes les catégories
+              {dict.home.viewAllCategories}
             </Link>
           </div>
           <div className="cat-grid">
@@ -65,7 +66,7 @@ export default async function HomePage() {
                 <div className="cat-icon">
                   <CategoryIcon slug={cat.slug} width={20} height={20} className="i" />
                 </div>
-                <span>{cat.name_fr}</span>
+                <span>{locale === 'en' ? cat.name_en : cat.name_fr}</span>
               </Link>
             ))}
           </div>
@@ -76,25 +77,23 @@ export default async function HomePage() {
         <div className="container">
           <div className="section-head">
             <div>
-              <div className="kicker">Annuaire</div>
-              <h2>Entreprises récemment ajoutées</h2>
+              <div className="kicker">{dict.home.directory}</div>
+              <h2>{dict.home.recentlyAdded}</h2>
               <p className="section-sub">
-                {user
-                  ? 'Connectez-vous permet déjà de voir les fiches complètes.'
-                  : "Créez un compte gratuit pour voir les coordonnées complètes des entreprises."}
+                {user ? dict.home.recentlyAddedSubLoggedIn : dict.home.recentlyAddedSubGuest}
               </p>
             </div>
           </div>
 
           {businesses.length === 0 ? (
             <div className="empty-state">
-              <h3>Aucune entreprise pour le moment</h3>
-              <p>Revenez bientôt, ou soyez la première fiche de l&apos;annuaire !</p>
+              <h3>{dict.home.emptyTitle}</h3>
+              <p>{dict.home.emptyText}</p>
             </div>
           ) : (
             <div className="results-grid">
               {businesses.map((b) => (
-                <BusinessCard key={b.id} business={b} loggedIn={Boolean(user)} />
+                <BusinessCard key={b.id} business={b} loggedIn={Boolean(user)} locale={locale} />
               ))}
             </div>
           )}
@@ -105,28 +104,25 @@ export default async function HomePage() {
         <div className="container">
           <div className="section-head">
             <div>
-              <div className="kicker">Fonctionnement</div>
-              <h2>Trois niveaux d&apos;accès</h2>
+              <div className="kicker">{dict.home.howItWorks}</div>
+              <h2>{dict.home.threeTiers}</h2>
             </div>
           </div>
           <div className="tiers-grid">
             <div className="tier-card">
-              <span className="tag">VISITEUR</span>
-              <h3>Non connecté</h3>
-              <p>Parcourez l&apos;annuaire et voyez les fiches en version limitée. Aucun accès aux coordonnées.</p>
+              <span className="tag">{dict.home.tierVisitorTag}</span>
+              <h3>{dict.home.tierVisitorTitle}</h3>
+              <p>{dict.home.tierVisitorText}</p>
             </div>
             <div className="tier-card highlight">
-              <span className="tag">GRATUIT</span>
-              <h3>Compte utilisateur</h3>
-              <p>
-                Fiche complète, contact direct avec l&apos;entreprise, et possibilité de laisser un avis après une
-                interaction réelle.
-              </p>
+              <span className="tag">{dict.home.tierUserTag}</span>
+              <h3>{dict.home.tierUserTitle}</h3>
+              <p>{dict.home.tierUserText}</p>
             </div>
             <div className="tier-card">
-              <span className="tag">ENTREPRISE</span>
-              <h3>Compte payant validé</h3>
-              <p>Gérez votre fiche, consultez vos statistiques et recevez les demandes des membres intéressés.</p>
+              <span className="tag">{dict.home.tierBusinessTag}</span>
+              <h3>{dict.home.tierBusinessTitle}</h3>
+              <p>{dict.home.tierBusinessText}</p>
             </div>
           </div>
         </div>
@@ -136,11 +132,11 @@ export default async function HomePage() {
         <div className="container">
           <div className="cta-band">
             <div>
-              <h2>Vous avez une entreprise ou une compétence à offrir ?</h2>
-              <p>Rejoignez l&apos;annuaire et gagnez en visibilité auprès de la communauté.</p>
+              <h2>{dict.home.ctaTitle}</h2>
+              <p>{dict.home.ctaText}</p>
             </div>
             <Link href="/inscription" className="btn btn-white btn-lg">
-              Inscrire mon entreprise
+              {dict.home.ctaButton}
             </Link>
           </div>
         </div>

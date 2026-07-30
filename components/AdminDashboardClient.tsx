@@ -10,10 +10,17 @@ import {
   reactivateBusiness,
   rejectBusiness,
 } from '@/app/tableau-bord-admin/actions';
+import { useLocale } from './LocaleProvider';
 
-function timeAgo(iso: string) {
+function timeAgo(iso: string, locale: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
   const hours = Math.floor(diffMs / 3600000);
+  if (locale === 'en') {
+    if (hours < 1) return 'just now';
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days} day${days > 1 ? 's' : ''} ago`;
+  }
   if (hours < 1) return "à l'instant";
   if (hours < 24) return `il y a ${hours}h`;
   const days = Math.floor(hours / 24);
@@ -21,6 +28,7 @@ function timeAgo(iso: string) {
 }
 
 export default function AdminDashboardClient({ pending, active }: { pending: Business[]; active: Business[] }) {
+  const { dict, locale } = useLocale();
   const [, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rejectTarget, setRejectTarget] = useState<Business | null>(null);
@@ -31,6 +39,11 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
   const [adminEmail, setAdminEmail] = useState('');
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
 
+  function categoryName(b: Business) {
+    if (!b.categories) return dict.dashboardAdmin.other;
+    return locale === 'en' ? b.categories.name_en : b.categories.name_fr;
+  }
+
   function handleApprove(b: Business) {
     setBusyId(b.id);
     setFeedback(null);
@@ -38,7 +51,7 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
       const res = await approveBusiness(b.id);
       setBusyId(null);
       if (res.error) setFeedback({ type: 'error', text: res.error });
-      else setFeedback({ type: 'success', text: `« ${b.name} » approuvée et publiée dans l'annuaire.` });
+      else setFeedback({ type: 'success', text: `« ${b.name} » ${dict.dashboardAdmin.approvedFeedback}` });
     });
   }
 
@@ -52,7 +65,7 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
       setRejectTarget(null);
       setRejectReason('');
       if (res.error) setFeedback({ type: 'error', text: res.error });
-      else setFeedback({ type: 'success', text: `« ${target.name} » refusée.` });
+      else setFeedback({ type: 'success', text: `« ${target.name} » ${dict.dashboardAdmin.rejectedFeedback}` });
     });
   }
 
@@ -66,7 +79,7 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
       setDeactivateTarget(null);
       setDeactivateReason('');
       if (res.error) setFeedback({ type: 'error', text: res.error });
-      else setFeedback({ type: 'success', text: `« ${target.name} » désactivée.` });
+      else setFeedback({ type: 'success', text: `« ${target.name} » ${dict.dashboardAdmin.deactivatedFeedback}` });
     });
   }
 
@@ -76,7 +89,7 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
       const res = await reactivateBusiness(b.id);
       setBusyId(null);
       if (res.error) setFeedback({ type: 'error', text: res.error });
-      else setFeedback({ type: 'success', text: `« ${b.name} » réactivée.` });
+      else setFeedback({ type: 'success', text: `« ${b.name} » ${dict.dashboardAdmin.reactivatedFeedback}` });
     });
   }
 
@@ -87,7 +100,7 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
       if (res.error) {
         setFeedback({ type: 'error', text: res.error });
       } else {
-        setFeedback({ type: 'success', text: `${adminEmail} est maintenant administrateur.` });
+        setFeedback({ type: 'success', text: `${adminEmail} ${dict.dashboardAdmin.adminPromotedFeedback}` });
         setAddAdminOpen(false);
         setAdminEmail('');
       }
@@ -98,10 +111,9 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
     <main className="dash-main">
       <div className="dash-head">
         <div>
-          <h1>Demandes en attente de validation</h1>
+          <h1>{dict.dashboardAdmin.pendingTitle}</h1>
           <p>
-            {pending.length} nouvelle{pending.length === 1 ? '' : 's'} fiche{pending.length === 1 ? '' : 's'} à
-            examiner avant publication dans l&apos;annuaire.
+            {pending.length} {dict.dashboardAdmin.pendingSub}
           </p>
         </div>
         <button className="btn btn-outline" onClick={() => setAddAdminOpen(true)}>
@@ -109,7 +121,7 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          Ajouter un administrateur
+          {dict.dashboardAdmin.addAdmin}
         </button>
       </div>
 
@@ -119,17 +131,17 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
         <table>
           <thead>
             <tr>
-              <th>Entreprise</th>
-              <th>Type de profil</th>
-              <th>Soumis</th>
-              <th>Actions</th>
+              <th>{dict.dashboardAdmin.business}</th>
+              <th>{dict.dashboardAdmin.profileType}</th>
+              <th>{dict.dashboardAdmin.submitted}</th>
+              <th>{dict.dashboardAdmin.actions}</th>
             </tr>
           </thead>
           <tbody>
             {pending.length === 0 ? (
               <tr>
                 <td colSpan={4} style={{ textAlign: 'center', color: 'var(--muted)' }}>
-                  Aucune fiche en attente.
+                  {dict.dashboardAdmin.noPending}
                 </td>
               </tr>
             ) : (
@@ -138,7 +150,7 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
                   <td>
                     <div className="row-title">{b.name}</div>
                     <div className="row-sub">
-                      {b.categories?.name_fr || 'Autres'} · {b.city || 'BC'}
+                      {categoryName(b)} · {b.city || 'BC'}
                     </div>
                   </td>
                   <td>
@@ -150,23 +162,23 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
                           : { background: 'var(--blue-100)', color: 'var(--blue-700)' }
                       }
                     >
-                      {b.profile_type === 'registered' ? 'Entreprise enregistrée' : 'Prof. indépendant'}
+                      {b.profile_type === 'registered' ? dict.business.registered : dict.business.independent}
                     </span>
                   </td>
-                  <td>{timeAgo(b.created_at)}</td>
+                  <td>{timeAgo(b.created_at, locale)}</td>
                   <td>
                     <div className="table-actions">
-                      <Link href={`/entreprises/${b.id}`} className="icon-btn" title="Voir la fiche">
+                      <Link href={`/entreprises/${b.id}`} className="icon-btn" title={dict.dashboardAdmin.viewListing}>
                         <svg className="i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                           <circle cx="12" cy="12" r="3" />
                         </svg>
                       </Link>
                       <button className="btn btn-primary btn-sm" onClick={() => handleApprove(b)} disabled={busyId === b.id}>
-                        {busyId === b.id ? <span className="spinner" /> : 'Approuver'}
+                        {busyId === b.id ? <span className="spinner" /> : dict.dashboardAdmin.approve}
                       </button>
                       <button className="btn btn-danger-outline btn-sm" onClick={() => setRejectTarget(b)}>
-                        Refuser
+                        {dict.dashboardAdmin.reject}
                       </button>
                     </div>
                   </td>
@@ -179,24 +191,24 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
 
       <div className="dash-head">
         <div>
-          <h2 style={{ fontSize: 18, color: 'var(--blue-900)' }}>Entreprises actives</h2>
+          <h2 style={{ fontSize: 18, color: 'var(--blue-900)' }}>{dict.dashboardAdmin.activeBusinesses}</h2>
         </div>
       </div>
       <div className="table-card">
         <table>
           <thead>
             <tr>
-              <th>Entreprise</th>
-              <th>Statut</th>
-              <th>Abonnement</th>
-              <th>Actions</th>
+              <th>{dict.dashboardAdmin.business}</th>
+              <th>{dict.dashboardAdmin.status}</th>
+              <th>{dict.dashboardAdmin.subscription}</th>
+              <th>{dict.dashboardAdmin.actions}</th>
             </tr>
           </thead>
           <tbody>
             {active.length === 0 ? (
               <tr>
                 <td colSpan={4} style={{ textAlign: 'center', color: 'var(--muted)' }}>
-                  Aucune entreprise active pour le moment.
+                  {dict.dashboardAdmin.noActive}
                 </td>
               </tr>
             ) : (
@@ -205,21 +217,21 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
                   <td>
                     <div className="row-title">{b.name}</div>
                     <div className="row-sub">
-                      {b.categories?.name_fr || 'Autres'} · {b.city || 'BC'}
+                      {categoryName(b)} · {b.city || 'BC'}
                     </div>
                   </td>
                   <td>
                     <span className={`status-pill ${b.status === 'approved' ? 'status-active' : 'status-rejected'}`}>
-                      {b.status === 'approved' ? 'Publiée' : 'Désactivée'}
+                      {b.status === 'approved' ? dict.dashboardAdmin.published : dict.dashboardAdmin.deactivated}
                     </span>
                   </td>
                   <td>
-                    {b.payment_status === 'active' ? 'Actif' : 'Non actif'} ·{' '}
-                    {b.profile_type === 'registered' ? '49,99 $/an' : '69,99 $/an'}
+                    {b.payment_status === 'active' ? dict.dashboardBusiness.active : dict.dashboardBusiness.inactive} ·{' '}
+                    {b.profile_type === 'registered' ? `49,99 $/${locale === 'en' ? 'yr' : 'an'}` : `69,99 $/${locale === 'en' ? 'yr' : 'an'}`}
                   </td>
                   <td>
                     <div className="table-actions">
-                      <Link href={`/entreprises/${b.id}`} className="icon-btn" title="Voir la fiche">
+                      <Link href={`/entreprises/${b.id}`} className="icon-btn" title={dict.dashboardAdmin.viewListing}>
                         <svg className="i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                           <circle cx="12" cy="12" r="3" />
@@ -227,11 +239,11 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
                       </Link>
                       {b.status === 'approved' ? (
                         <button className="btn btn-danger-outline btn-sm" onClick={() => setDeactivateTarget(b)}>
-                          Désactiver
+                          {dict.dashboardAdmin.deactivate}
                         </button>
                       ) : (
                         <button className="btn btn-outline btn-sm" onClick={() => handleReactivate(b)} disabled={busyId === b.id}>
-                          {busyId === b.id ? <span className="spinner dark" /> : 'Réactiver'}
+                          {busyId === b.id ? <span className="spinner dark" /> : dict.dashboardAdmin.reactivate}
                         </button>
                       )}
                     </div>
@@ -246,22 +258,24 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
       {rejectTarget && (
         <div className="modal-overlay">
           <div className="modal-box" style={{ textAlign: 'left' }}>
-            <h3 style={{ textAlign: 'center' }}>Refuser « {rejectTarget.name} » ?</h3>
-            <p style={{ textAlign: 'center' }}>Indiquez un motif — il sera visible par l&apos;entreprise dans son tableau de bord.</p>
+            <h3 style={{ textAlign: 'center' }}>
+              {dict.dashboardAdmin.rejectTitle} « {rejectTarget.name} » ?
+            </h3>
+            <p style={{ textAlign: 'center' }}>{dict.dashboardAdmin.rejectText}</p>
             <div className="form-group">
               <textarea
                 className="form-control"
-                placeholder="Ex. document d'enregistrement illisible, merci de le soumettre à nouveau."
+                placeholder={dict.dashboardAdmin.rejectPlaceholder}
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
               />
             </div>
             <div className="modal-actions">
               <button className="btn btn-outline btn-block" onClick={() => setRejectTarget(null)}>
-                Annuler
+                {dict.common.cancel}
               </button>
               <button className="btn btn-primary btn-block" style={{ background: 'var(--red)', boxShadow: 'none' }} onClick={confirmReject}>
-                Confirmer le refus
+                {dict.dashboardAdmin.confirmReject}
               </button>
             </div>
           </div>
@@ -278,22 +292,22 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
                 <line x1="12" y1="17" x2="12.01" y2="17" />
               </svg>
             </div>
-            <h3>Désactiver cette fiche ?</h3>
-            <p>L&apos;entreprise ne sera plus visible dans l&apos;annuaire tant qu&apos;elle ne sera pas réactivée. Un courriel automatique sera envoyé au contact pour l&apos;informer.</p>
+            <h3>{dict.dashboardAdmin.deactivateTitle}</h3>
+            <p>{dict.dashboardAdmin.deactivateText}</p>
             <div className="form-group" style={{ textAlign: 'left' }}>
               <textarea
                 className="form-control"
-                placeholder="Motif (facultatif)"
+                placeholder={dict.dashboardAdmin.deactivateReasonPlaceholder}
                 value={deactivateReason}
                 onChange={(e) => setDeactivateReason(e.target.value)}
               />
             </div>
             <div className="modal-actions">
               <button className="btn btn-outline btn-block" onClick={() => setDeactivateTarget(null)}>
-                Annuler
+                {dict.common.cancel}
               </button>
               <button className="btn btn-primary btn-block" style={{ background: 'var(--red)', boxShadow: 'none' }} onClick={confirmDeactivate}>
-                Confirmer la désactivation
+                {dict.dashboardAdmin.confirmDeactivate}
               </button>
             </div>
           </div>
@@ -303,13 +317,11 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
       {addAdminOpen && (
         <div className="modal-overlay">
           <div className="modal-box" style={{ textAlign: 'left' }}>
-            <h3 style={{ textAlign: 'center', marginBottom: 4 }}>Ajouter un administrateur</h3>
-            <p style={{ textAlign: 'center' }}>
-              La personne doit déjà avoir un compte Calvary Connect (gratuit) avec ce courriel.
-            </p>
+            <h3 style={{ textAlign: 'center', marginBottom: 4 }}>{dict.dashboardAdmin.addAdminTitle}</h3>
+            <p style={{ textAlign: 'center' }}>{dict.dashboardAdmin.addAdminText}</p>
             <form onSubmit={handleAddAdmin}>
               <div className="form-group">
-                <label>Adresse courriel</label>
+                <label>{dict.dashboardAdmin.emailLabel}</label>
                 <input
                   type="email"
                   className="form-control"
@@ -321,10 +333,10 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
               </div>
               <div className="modal-actions">
                 <button type="button" className="btn btn-outline btn-block" onClick={() => setAddAdminOpen(false)}>
-                  Annuler
+                  {dict.common.cancel}
                 </button>
                 <button type="submit" className="btn btn-primary btn-block">
-                  Promouvoir administrateur
+                  {dict.dashboardAdmin.promote}
                 </button>
               </div>
             </form>

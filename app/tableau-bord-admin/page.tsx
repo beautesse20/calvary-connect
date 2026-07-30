@@ -3,12 +3,16 @@ import SiteHeader from '@/components/SiteHeader';
 import DashSidebar from '@/components/DashSidebar';
 import AdminDashboardClient from '@/components/AdminDashboardClient';
 import { createClient } from '@/lib/supabase/server';
+import { getLocale } from '@/lib/i18n/get-locale';
+import { getDictionary } from '@/lib/i18n/dictionaries';
 import type { Business } from '@/lib/types';
 
 export const revalidate = 0;
 
 export default async function TableauBordAdminPage() {
   const supabase = await createClient();
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -34,7 +38,7 @@ export default async function TableauBordAdminPage() {
       <SiteHeader />
       <div className="dash-shell">
         <DashSidebar
-          title="En attente"
+          title={dict.dashboardAdmin.sidebarPending}
           icon={
             <svg className="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />

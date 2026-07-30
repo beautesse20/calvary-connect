@@ -1,16 +1,21 @@
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import GeneralContactForm from '@/components/GeneralContactForm';
+import { getLocale } from '@/lib/i18n/get-locale';
+import { getDictionary } from '@/lib/i18n/dictionaries';
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
+
   return (
     <>
       <SiteHeader />
       <section className="hero" style={{ paddingBottom: 24 }}>
         <div className="container">
-          <div className="kicker">Contact</div>
-          <h1 style={{ fontSize: 36 }}>Une question ? Nous sommes là.</h1>
-          <p className="lede">Notre équipe vous répond sous 24h maximum, tous les jours de la semaine.</p>
+          <div className="kicker">{dict.contact.kicker}</div>
+          <h1 style={{ fontSize: 36 }}>{dict.contact.title}</h1>
+          <p className="lede">{dict.contact.lede}</p>
         </div>
       </section>
 
@@ -26,7 +31,7 @@ export default function ContactPage() {
                   </svg>
                 </div>
                 <div>
-                  <strong>Courriel</strong>
+                  <strong>{dict.contact.email}</strong>
                   <span>contact@calvaryconnect.ca</span>
                 </div>
               </div>
@@ -38,8 +43,8 @@ export default function ContactPage() {
                   </svg>
                 </div>
                 <div>
-                  <strong>Délai de réponse</strong>
-                  <span>24 heures maximum, engagement affiché sur le site</span>
+                  <strong>{dict.contact.responseTime}</strong>
+                  <span>{dict.contact.responseTimeValue}</span>
                 </div>
               </div>
               <div className="contact-info-item">
@@ -50,8 +55,8 @@ export default function ContactPage() {
                   </svg>
                 </div>
                 <div>
-                  <strong>Communauté</strong>
-                  <span>Calvary Worship Center · Colombie-Britannique, Canada</span>
+                  <strong>{dict.contact.community}</strong>
+                  <span>Calvary Worship Center · {locale === 'en' ? 'British Columbia, Canada' : 'Colombie-Britannique, Canada'}</span>
                 </div>
               </div>
 
@@ -61,8 +66,7 @@ export default function ContactPage() {
                   <line x1="12" y1="16" x2="12" y2="12" />
                   <line x1="12" y1="8" x2="12.01" y2="8" />
                 </svg>
-                Pour signaler une fiche ou un avis, utilisez ce formulaire en choisissant le sujet « Signalement
-                d&apos;un avis ».
+                {dict.contact.reportNote}
               </div>
             </div>
 
