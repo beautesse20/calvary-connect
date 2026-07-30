@@ -12,7 +12,7 @@ function ConnexionForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
-  const { dict } = useLocale();
+  const { dict, locale } = useLocale();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
@@ -22,15 +22,26 @@ function ConnexionForm() {
     e.preventDefault();
     setError(null);
     setPending(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setPending(false);
-    if (error) {
-      setError(error.message === 'Invalid login credentials' ? dict.auth.invalidCredentials : error.message);
-      return;
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setError(error.message === 'Invalid login credentials' ? dict.auth.invalidCredentials : error.message);
+        return;
+      }
+      const next = searchParams.get('next') || '/';
+      router.push(next);
+      router.refresh();
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? `${locale === 'en' ? 'Connection error' : 'Erreur de connexion'}: ${e.message}`
+          : locale === 'en'
+            ? 'Connection error. Check your internet connection and try again.'
+            : 'Erreur de connexion. Vérifiez votre connexion internet et réessayez.'
+      );
+    } finally {
+      setPending(false);
     }
-    const next = searchParams.get('next') || '/';
-    router.push(next);
-    router.refresh();
   }
 
   return (

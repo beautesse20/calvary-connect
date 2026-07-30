@@ -11,7 +11,7 @@ import { useLocale } from '@/components/LocaleProvider';
 export default function CreerComptePage() {
   const router = useRouter();
   const supabase = createClient();
-  const { dict } = useLocale();
+  const { dict, locale } = useLocale();
   const [prenom, setPrenom] = useState('');
   const [nom, setNom] = useState('');
   const [email, setEmail] = useState('');
@@ -32,18 +32,29 @@ export default function CreerComptePage() {
       return;
     }
     setPending(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: `${prenom} ${nom}`.trim() } },
-    });
-    setPending(false);
-    if (error) {
-      setError(error.message);
-      return;
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: `${prenom} ${nom}`.trim() } },
+      });
+      if (error) {
+        setError(error.message);
+        return;
+      }
+      router.push('/');
+      router.refresh();
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? `${locale === 'en' ? 'Connection error' : 'Erreur de connexion'}: ${e.message}`
+          : locale === 'en'
+            ? 'Connection error. Check your internet connection and try again.'
+            : 'Erreur de connexion. Vérifiez votre connexion internet et réessayez.'
+      );
+    } finally {
+      setPending(false);
     }
-    router.push('/');
-    router.refresh();
   }
 
   return (
