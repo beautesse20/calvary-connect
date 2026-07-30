@@ -154,6 +154,10 @@ input, select, textarea { font-family: inherit; }
   border-bottom: 1px solid var(--border-2);
 }
 .mobile-nav .mobile-actions { margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
+/* ".mobile-nav a" above sets display:block (and wins on specificity over .btn's
+   inline-flex), which left-aligns the button labels instead of centering them.
+   Re-assert flex centering specifically for the buttons in this menu. */
+.mobile-nav .mobile-actions .btn { display: flex; align-items: center; justify-content: center; border-bottom: none; padding: 12px 22px; }
 
 /* ---------------- Buttons ---------------- */
 .btn {
