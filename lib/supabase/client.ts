@@ -8,9 +8,14 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 // tous createClient() sur la même page : plusieurs instances de GoTrueClient
 // se disputent alors le même verrou navigator.locks("sb-<ref>-auth-token"),
 // ce qui peut le bloquer indéfiniment (le formulaire de connexion tourne à
-// l'infini sans jamais envoyer la requête réseau). On mémorise donc une seule
-// instance partagée par toute la page.
-let client: SupabaseClient | undefined;
+// l'infini sans jamais envoyer la requête réseau).
+//
+// On mémorise donc une seule instance partagée. Elle est rattachée à
+// `globalThis` (et pas juste à une variable de module) car Next.js peut
+// dupliquer ce module dans plusieurs chunks JS distincts — une variable de
+// module ordinaire ne suffit alors pas à garantir un vrai singleton unique
+// à l'échelle de toute la page.
+const GLOBAL_KEY = '__calvaryConnectSupabaseBrowserClient__';
 
 // Bug connu de supabase-js (voir supabase/supabase-js#2013, #2111) : le verrou
 // navigator.locks utilisé en interne pour sérialiser les appels d'auth peut
@@ -24,8 +29,9 @@ const noOpLock = async <R,>(_name: string, _acquireTimeout: number, fn: () => Pr
 };
 
 export function createClient() {
-  if (!client) {
-    client = createBrowserClient(
+  const g = globalThis as typeof globalThis & { [GLOBAL_KEY]?: SupabaseClient };
+  if (!g[GLOBAL_KEY]) {
+    g[GLOBAL_KEY] = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
@@ -35,5 +41,5 @@ export function createClient() {
       }
     );
   }
-  return client;
+  return g[GLOBAL_KEY];
 }
