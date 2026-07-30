@@ -35,13 +35,14 @@ export async function searchBusinesses(opts: {
     .order('created_at', { ascending: false });
 
   if (opts.q) {
-    query = query.or(`name.ilike.%${opts.q}%,description.ilike.%${opts.q}%`);
+    // Escape PostgREST filter special characters so a search containing
+    // ",", "(", ")" or "%" doesn't break the .or() filter string or get
+    // interpreted as a wildcard.
+    const safe = opts.q.replace(/[,()%]/g, '');
+    query = query.or(`name.ilike.%${safe}%,description.ilike.%${safe}%`);
   }
   if (opts.city) {
-    query = query.ilike('city', `%${opts.city}%`);
-  }
-  if (opts.limit) {
-    query = query.limit(opts.limit);
+    query = query.ilike('city', `%${opts.city.replace(/[,()%]/g, '')}%`);
   }
 
   const { data } = await query;
@@ -49,6 +50,12 @@ export async function searchBusinesses(opts: {
 
   if (opts.categorySlug) {
     results = results.filter((b) => b.categories?.slug === opts.categorySlug);
+  }
+
+  // Applied after the category filter (not as a SQL .limit()) so a
+  // category+limit combination never truncates results before filtering.
+  if (opts.limit) {
+    results = results.slice(0, opts.limit);
   }
 
   return results;
