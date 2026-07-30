@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useLocale } from './LocaleProvider';
+import UserMenu from './UserMenu';
 
 export default function SiteHeader() {
   const pathname = usePathname();
@@ -21,6 +22,7 @@ export default function SiteHeader() {
   const [session, setSession] = useState<'loading' | 'out' | 'user' | 'business' | 'admin' | 'super_admin'>(
     'loading'
   );
+  const [displayName, setDisplayName] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -36,11 +38,27 @@ export default function SiteHeader() {
       }
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, full_name')
         .eq('id', user.id)
         .single();
       if (!active) return;
-      setSession((profile?.role as any) || 'user');
+      const role = (profile?.role as any) || 'user';
+      setSession(role);
+
+      if (role === 'business') {
+        const { data: business } = await supabase
+          .from('businesses')
+          .select('name')
+          .eq('owner_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!active) return;
+        setDisplayName(business?.name || profile?.full_name || '');
+      } else {
+        const firstName = (profile?.full_name || '').trim().split(/\s+/)[0] || '';
+        setDisplayName(firstName);
+      }
     }
     load();
 
@@ -101,14 +119,14 @@ export default function SiteHeader() {
                 </Link>
               </>
             ) : (
-              <>
-                <Link href={dashboardHref} className="btn btn-ghost btn-sm">
-                  {dict.header.dashboard}
-                </Link>
-                <button className="btn btn-outline btn-sm" onClick={handleLogout}>
-                  {dict.header.logout}
-                </button>
-              </>
+              <UserMenu
+                label={displayName || dict.header.myAccount}
+                dashboardHref={dashboardHref}
+                dashboardLabel={dict.header.dashboard}
+                updateInfoLabel={dict.header.updateInfo}
+                logoutLabel={dict.header.logout}
+                onLogout={handleLogout}
+              />
             )}
             <button className="hamburger" onClick={() => setOpen((v) => !v)} aria-label="Menu">
               <span></span>
@@ -136,8 +154,12 @@ export default function SiteHeader() {
             </>
           ) : (
             <>
+              <div className="mobile-account-name">{displayName || dict.header.myAccount}</div>
               <Link href={dashboardHref} className="btn btn-outline btn-block" onClick={() => setOpen(false)}>
                 {dict.header.dashboard}
+              </Link>
+              <Link href="/mon-compte" className="btn btn-outline btn-block" onClick={() => setOpen(false)}>
+                {dict.header.updateInfo}
               </Link>
               <button
                 className="btn btn-primary btn-block"

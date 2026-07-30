@@ -10,6 +10,8 @@ export const dictionaries = {
       registerBusiness: 'Inscrire mon entreprise',
       dashboard: 'Tableau de bord',
       logout: 'Déconnexion',
+      updateInfo: 'Mettre à jour mes infos',
+      myAccount: 'Mon compte',
     },
     footer: {
       tagline:
@@ -335,6 +337,19 @@ export const dictionaries = {
       adminPromotedFeedback: 'est maintenant administrateur.',
       other: 'Autres',
     },
+    account: {
+      title: 'Mon compte',
+      lede: 'Mettez à jour vos informations personnelles.',
+      firstName: 'Prénom',
+      lastName: 'Nom',
+      email: 'Courriel',
+      emailNote: "Pour changer d'adresse courriel, contactez-nous depuis la page Contact.",
+      newPassword: 'Nouveau mot de passe',
+      newPasswordHint: 'Laissez vide pour ne pas changer votre mot de passe.',
+      save: 'Enregistrer les modifications',
+      updated: 'Vos informations ont été mises à jour.',
+      businessNote: 'Pour modifier les informations de votre entreprise, rendez-vous sur votre tableau de bord.',
+    },
     common: {
       cancel: 'Annuler',
     },
@@ -346,6 +361,8 @@ export const dictionaries = {
       registerBusiness: 'List my business',
       dashboard: 'Dashboard',
       logout: 'Log out',
+      updateInfo: 'Update my info',
+      myAccount: 'My account',
     },
     footer: {
       tagline: 'The directory of businesses and professionals in the Calvary Worship Center community, in British Columbia.',
@@ -669,6 +686,19 @@ export const dictionaries = {
       reactivatedFeedback: 'reactivated.',
       adminPromotedFeedback: 'is now an administrator.',
       other: 'Other',
+    },
+    account: {
+      title: 'My account',
+      lede: 'Update your personal information.',
+      firstName: 'First name',
+      lastName: 'Last name',
+      email: 'Email',
+      emailNote: 'To change your email address, contact us from the Contact page.',
+      newPassword: 'New password',
+      newPasswordHint: 'Leave blank to keep your current password.',
+      save: 'Save changes',
+      updated: 'Your information has been updated.',
+      businessNote: 'To edit your business information, go to your dashboard.',
     },
     common: {
       cancel: 'Cancel',
