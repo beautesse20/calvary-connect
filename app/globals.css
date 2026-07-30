@@ -397,6 +397,7 @@ input, select, textarea { font-family: inherit; }
 .biz-meta { color: var(--muted); font-size: 13px; margin-top: 4px; }
 .stars { color: var(--blue-600); font-size: 13px; font-weight: 700; margin-top: 10px; display: flex; align-items: center; gap: 6px; }
 .stars .count { color: var(--muted-2); font-weight: 500; }
+.stars .i-muted { color: var(--border); }
 .biz-desc { color: var(--muted); font-size: 13.5px; margin-top: 8px; line-height: 1.5; }
 .lock-note {
   margin-top: 12px;
@@ -723,6 +724,46 @@ tr:last-child td { border-bottom: none; }
 .modal-box p { font-size: 14px; color: var(--muted); margin-bottom: 22px; }
 .modal-actions { display: flex; gap: 10px; }
 .modal-actions .btn { flex: 1; }
+
+/* ---------------- Mon compte ---------------- */
+.account-shell { max-width: 720px; margin: 0 auto; padding: 40px 20px 80px; display: flex; flex-direction: column; gap: 20px; }
+.account-card-title { font-size: 16px; color: var(--blue-900); margin-bottom: 4px; }
+.account-card-lede { font-size: 13px; color: var(--muted-2); margin-bottom: 18px; }
+.account-avatar-row { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
+.account-avatar {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--blue-700); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; font-weight: 700; flex-shrink: 0;
+  overflow: hidden;
+}
+.account-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.toggle-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 14px 0; }
+.toggle-row .toggle-copy strong { display: block; font-size: 14px; color: var(--ink); }
+.toggle-row .toggle-copy span { font-size: 12.5px; color: var(--muted-2); }
+.switch { position: relative; display: inline-block; width: 42px; height: 24px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch-slider {
+  position: absolute; cursor: pointer; inset: 0;
+  background: var(--border); border-radius: 999px; transition: 0.15s;
+}
+.switch-slider::before {
+  content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px;
+  background: white; border-radius: 50%; transition: 0.15s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.switch input:checked + .switch-slider { background: var(--blue-700); }
+.switch input:checked + .switch-slider::before { transform: translateX(18px); }
+.account-list-item {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 14px 0; border-bottom: 1px solid var(--border-2);
+}
+.account-list-item:last-child { border-bottom: none; }
+.account-list-item .main { flex: 1; min-width: 0; }
+.account-list-item .who { font-size: 13.5px; font-weight: 700; color: var(--ink); }
+.account-list-item p { font-size: 13.5px; color: var(--muted); margin: 4px 0; }
+.account-empty { font-size: 13.5px; color: var(--muted-2); padding: 6px 0 4px; }
+.danger-card { border-color: #F3C9C9 !important; }
+.danger-card h2 { color: var(--red); }
 
 /* ---------------- About / timeline ---------------- */
 .timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }

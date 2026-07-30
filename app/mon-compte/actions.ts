@@ -1,9 +1,14 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 
-export async function updateMyProfile(fields: { fullName: string; newPassword?: string }) {
+export async function updateMyProfile(fields: {
+  fullName: string;
+  phone: string;
+  emailNotifications: boolean;
+  newPassword?: string;
+}) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -12,7 +17,11 @@ export async function updateMyProfile(fields: { fullName: string; newPassword?: 
 
   const { error: profileError } = await supabase
     .from('profiles')
-    .update({ full_name: fields.fullName })
+    .update({
+      full_name: fields.fullName,
+      phone: fields.phone || null,
+      email_notifications: fields.emailNotifications,
+    })
     .eq('id', user.id);
 
   if (profileError) return { error: profileError.message };
@@ -26,5 +35,99 @@ export async function updateMyProfile(fields: { fullName: string; newPassword?: 
   }
 
   revalidatePath('/mon-compte');
+  return { success: true };
+}
+
+export async function uploadAvatar(file: File) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'Vous devez être connecté.' };
+
+  const path = `${user.id}/${Date.now()}-${file.name}`;
+  const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+  if (uploadError) return { error: uploadError.message };
+
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .update({ avatar_url: data.publicUrl })
+    .eq('id', user.id);
+  if (profileError) return { error: profileError.message };
+
+  revalidatePath('/mon-compte');
+  return { success: true, url: data.publicUrl };
+}
+
+export async function deleteMyReview(reviewId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'Vous devez être connecté.' };
+
+  const { error } = await supabase.from('reviews').delete().eq('id', reviewId).eq('author_id', user.id);
+  if (error) return { error: error.message };
+
+  revalidatePath('/mon-compte');
+  return { success: true };
+}
+
+export async function removeFavorite(businessId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'Vous devez être connecté.' };
+
+  const { error } = await supabase.from('favorites').delete().eq('user_id', user.id).eq('business_id', businessId);
+  if (error) return { error: error.message };
+
+  revalidatePath('/mon-compte');
+  return { success: true };
+}
+
+export async function toggleFavorite(businessId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'Vous devez être connecté.' };
+
+  const { data: existing } = await supabase
+    .from('favorites')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('business_id', businessId)
+    .maybeSingle();
+
+  if (existing) {
+    const { error } = await supabase.from('favorites').delete().eq('id', existing.id);
+    if (error) return { error: error.message };
+    return { success: true, favorited: false };
+  }
+
+  const { error } = await supabase.from('favorites').insert({ user_id: user.id, business_id: businessId });
+  if (error) return { error: error.message };
+  return { success: true, favorited: true };
+}
+
+// Suppression de compte : les entreprises (owner_id), avis (author_id) et
+// messages (sender_id) sont déjà configurés avec la bonne règle de
+// suppression au niveau de la base (set null / cascade), donc supprimer
+// l'utilisateur via l'API admin nettoie tout automatiquement.
+export async function deleteMyAccount() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'Vous devez être connecté.' };
+
+  const admin = createAdminClient();
+  const { error } = await admin.auth.admin.deleteUser(user.id);
+  if (error) return { error: error.message };
+
+  await supabase.auth.signOut();
   return { success: true };
 }

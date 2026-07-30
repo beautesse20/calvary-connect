@@ -4,6 +4,7 @@ import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import ReviewForm from '@/components/ReviewForm';
 import ContactBusinessForm from '@/components/ContactBusinessForm';
+import FavoriteButton from '@/components/FavoriteButton';
 import { CategoryIcon, IconStarFilled, IconLock } from '@/components/icons';
 import { createClient } from '@/lib/supabase/server';
 import { getBusinessById } from '@/lib/data/businesses';
@@ -39,6 +40,17 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
   const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
 
   const alreadyReviewed = user ? reviews.some((r) => r.author_id === user.id) : false;
+
+  let initialFavorited = false;
+  if (user) {
+    const { data: favRow } = await supabase
+      .from('favorites')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('business_id', id)
+      .maybeSingle();
+    initialFavorited = !!favRow;
+  }
   const badgeLabel = business.profile_type === 'registered' ? dict.business.registered : dict.business.independent;
   const categoryName = business.categories ? (locale === 'en' ? business.categories.name_en : business.categories.name_fr) : null;
   const bcName = locale === 'en' ? 'British Columbia' : 'Colombie-Britannique';
@@ -143,6 +155,12 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
                   <div>
                     <strong style={{ fontSize: 14.5, display: 'block', marginBottom: 10 }}>{dict.business.contactThisBusiness}</strong>
                     <ContactBusinessForm businessId={business.id} />
+                  </div>
+                )}
+
+                {user && business.owner_id !== user.id && (
+                  <div style={{ marginTop: 14 }}>
+                    <FavoriteButton businessId={business.id} initialFavorited={initialFavorited} />
                   </div>
                 )}
 

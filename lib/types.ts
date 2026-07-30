@@ -48,7 +48,19 @@ export interface Profile {
   id: string;
   full_name: string | null;
   role: ProfileRole;
+  phone: string | null;
+  avatar_url: string | null;
+  preferred_locale: 'fr' | 'en' | null;
+  email_notifications: boolean;
   created_at: string;
+}
+
+export interface Favorite {
+  id: string;
+  user_id: string;
+  business_id: string;
+  created_at: string;
+  businesses?: Business | null;
 }
 
 export interface Message {
