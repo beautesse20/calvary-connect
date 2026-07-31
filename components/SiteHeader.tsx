@@ -72,8 +72,28 @@ export default function SiteHeader() {
 
   async function handleLogout() {
     try {
-      await supabase.auth.signOut();
+      // supabase.auth.signOut() peut, dans de rares cas, rester bloqué
+      // indéfiniment (même famille de bug que le verrou navigator.locks qui
+      // bloquait la connexion) : le clic sur "déconnexion" semblait alors ne
+      // rien faire, et seul un rafraîchissement manuel de la page révélait
+      // que la session avait bel et bien été fermée côté client. On limite
+      // donc l'attente à 3 secondes maximum avant de forcer la navigation.
+      await Promise.race([
+        supabase.auth.signOut(),
+        new Promise((resolve) => setTimeout(resolve, 3000)),
+      ]);
     } finally {
+      // Filet de sécurité : même si signOut() ci-dessus a été bloqué ou a
+      // échoué silencieusement, on efface nous-mêmes le cookie de session
+      // (sb-<ref>-auth-token) avant de naviguer, pour garantir que la page
+      // rechargée voit bien un visiteur déconnecté, sans besoin d'un
+      // deuxième rafraîchissement manuel.
+      document.cookie.split(';').forEach((c) => {
+        const name = c.split('=')[0].trim();
+        if (name.startsWith('sb-') && name.includes('-auth-token')) {
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+        }
+      });
       // Hard navigation (not router.push/refresh): forces the browser to drop
       // the Next.js client router cache and send a brand-new request, so the
       // middleware sees the just-cleared cookies instead of a stale cached
