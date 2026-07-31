@@ -182,6 +182,7 @@ input, select, textarea { font-family: inherit; }
 .lang-switch span {
   padding: 7px 12px;
   color: var(--muted-2);
+  cursor: pointer;
 }
 .lang-switch span.active { background: var(--blue-700); color: white; }
 
