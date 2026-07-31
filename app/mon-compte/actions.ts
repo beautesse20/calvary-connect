@@ -39,25 +39,44 @@ export async function updateMyProfile(fields: {
 }
 
 export async function uploadAvatar(file: File) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: 'Vous devez être connecté.' };
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { error: 'Vous devez être connecté.' };
 
-  const path = `${user.id}/${Date.now()}-${file.name}`;
-  const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
-  if (uploadError) return { error: uploadError.message };
+    // Les noms de fichiers avec espaces, accents ou parenthèses (ex: photo
+    // envoyée depuis un iPhone) peuvent poser problème comme clé de stockage :
+    // on nettoie le nom pour ne garder que des caractères sûrs.
+    const safeName = file.name
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-zA-Z0-9.\-]/g, '_');
+    const path = `${user.id}/${Date.now()}-${safeName}`;
 
-  const { data } = supabase.storage.from('avatars').getPublicUrl(path);
-  const { error: profileError } = await supabase
-    .from('profiles')
-    .update({ avatar_url: data.publicUrl })
-    .eq('id', user.id);
-  if (profileError) return { error: profileError.message };
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, {
+      upsert: true,
+      contentType: file.type || 'application/octet-stream',
+    });
+    if (uploadError) return { error: uploadError.message };
 
-  revalidatePath('/mon-compte');
-  return { success: true, url: data.publicUrl };
+    const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ avatar_url: data.publicUrl })
+      .eq('id', user.id);
+    if (profileError) return { error: profileError.message };
+
+    revalidatePath('/mon-compte');
+    return { success: true, url: data.publicUrl };
+  } catch (e) {
+    // Filet de sécurité : si l'appel lève une exception (bucket manquant,
+    // erreur réseau, etc.) au lieu de renvoyer un champ `error`, on renvoie
+    // quand même un message exploitable plutôt qu'un échec Server Action
+    // générique sans détail.
+    return { error: e instanceof Error ? e.message : "Échec de l'envoi de la photo." };
+  }
 }
 
 export async function deleteMyReview(reviewId: string) {
