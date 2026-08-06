@@ -51,8 +51,15 @@ export async function registerBusiness(input: RegisterBusinessInput) {
     if (docsError) return { error: docsError.message, business };
   }
 
-  // Le profil devient 'business' pour refléter son rôle dans la navigation.
-  await supabase.from('profiles').update({ role: 'business' }).eq('id', user.id);
+  // Le profil devient 'business' pour refléter son rôle dans la navigation —
+  // mais seulement s'il s'agit d'un simple membre ('user'). Sans cette
+  // vérification, un administrateur qui inscrit une entreprise avec sa
+  // propre adresse courriel se ferait écraser son rôle 'admin'/'super_admin'
+  // par 'business', perdant ainsi son accès au tableau de bord admin.
+  const { data: currentProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+  if (currentProfile?.role === 'user') {
+    await supabase.from('profiles').update({ role: 'business' }).eq('id', user.id);
+  }
 
   return { success: true, businessId: business.id };
 }
