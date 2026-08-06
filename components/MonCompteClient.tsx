@@ -132,7 +132,9 @@ export default function MonCompteClient({
 
     setAvatarPending(true);
     try {
-      const res = await uploadAvatar(file);
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await uploadAvatar(fd);
       if (res.error) {
         setAvatarError(res.error);
       } else if ('url' in res && res.url) {

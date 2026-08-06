@@ -55,19 +55,28 @@ export default function InscriptionWizard({
     try {
       let logoUrl: string | null = null;
       if (logoFile) {
-        const res = await uploadLogo(logoFile, userId);
+        const fd = new FormData();
+        fd.append('file', logoFile);
+        fd.append('userId', userId);
+        const res = await uploadLogo(fd);
         if ('error' in res && res.error) throw new Error(res.error);
         logoUrl = 'url' in res && res.url ? res.url : null;
       }
 
       const documentPaths: { file_path: string; doc_type: string }[] = [];
       if (regDoc) {
-        const res = await uploadDocument(regDoc, userId);
+        const fd = new FormData();
+        fd.append('file', regDoc);
+        fd.append('userId', userId);
+        const res = await uploadDocument(fd);
         if ('error' in res && res.error) throw new Error(res.error);
         if ('path' in res && res.path) documentPaths.push({ file_path: res.path, doc_type: 'enregistrement' });
       }
       if (idDoc) {
-        const res = await uploadDocument(idDoc, userId);
+        const fd = new FormData();
+        fd.append('file', idDoc);
+        fd.append('userId', userId);
+        const res = await uploadDocument(fd);
         if ('error' in res && res.error) throw new Error(res.error);
         if ('path' in res && res.path) documentPaths.push({ file_path: res.path, doc_type: 'identite' });
       }

@@ -38,8 +38,16 @@ export async function updateMyProfile(fields: {
   return { success: true };
 }
 
-export async function uploadAvatar(file: File) {
+export async function uploadAvatar(formData: FormData) {
   try {
+    // Les Server Actions de Next.js n'acceptent pas de manière fiable un
+    // objet File passé directement comme argument ("Only plain objects, and
+    // a few built-ins, can be passed to Server Actions. Classes or null
+    // prototypes are not supported."). On le récupère donc depuis un
+    // FormData, qui fait partie des types intégrés explicitement supportés.
+    const file = formData.get('file') as File | null;
+    if (!file) return { error: 'Fichier manquant.' };
+
     const supabase = await createClient();
     const {
       data: { user },

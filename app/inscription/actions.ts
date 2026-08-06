@@ -57,19 +57,51 @@ export async function registerBusiness(input: RegisterBusinessInput) {
   return { success: true, businessId: business.id };
 }
 
-export async function uploadLogo(file: File, userId: string) {
-  const supabase = await createClient();
-  const path = `${userId}/${Date.now()}-${file.name}`;
-  const { error } = await supabase.storage.from('business-logos').upload(path, file);
-  if (error) return { error: error.message };
-  const { data } = supabase.storage.from('business-logos').getPublicUrl(path);
-  return { url: data.publicUrl };
+// Les Server Actions de Next.js n'acceptent pas de manière fiable un objet
+// File passé directement comme argument ("Only plain objects, and a few
+// built-ins, can be passed to Server Actions. Classes or null prototypes are
+// not supported."). On passe donc le fichier à travers un FormData, qui fait
+// partie des quelques types intégrés explicitement supportés.
+function sanitizeFileName(name: string) {
+  return name
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-zA-Z0-9.\-]/g, '_');
 }
 
-export async function uploadDocument(file: File, userId: string) {
-  const supabase = await createClient();
-  const path = `${userId}/${Date.now()}-${file.name}`;
-  const { error } = await supabase.storage.from('business-documents').upload(path, file);
-  if (error) return { error: error.message };
-  return { path };
+export async function uploadLogo(formData: FormData) {
+  try {
+    const file = formData.get('file') as File | null;
+    const userId = formData.get('userId') as string | null;
+    if (!file || !userId) return { error: 'Fichier manquant.' };
+
+    const supabase = await createClient();
+    const path = `${userId}/${Date.now()}-${sanitizeFileName(file.name)}`;
+    const { error } = await supabase.storage.from('business-logos').upload(path, file, {
+      contentType: file.type || 'application/octet-stream',
+    });
+    if (error) return { error: error.message };
+    const { data } = supabase.storage.from('business-logos').getPublicUrl(path);
+    return { url: data.publicUrl };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Échec de l'envoi du logo." };
+  }
+}
+
+export async function uploadDocument(formData: FormData) {
+  try {
+    const file = formData.get('file') as File | null;
+    const userId = formData.get('userId') as string | null;
+    if (!file || !userId) return { error: 'Fichier manquant.' };
+
+    const supabase = await createClient();
+    const path = `${userId}/${Date.now()}-${sanitizeFileName(file.name)}`;
+    const { error } = await supabase.storage.from('business-documents').upload(path, file, {
+      contentType: file.type || 'application/octet-stream',
+    });
+    if (error) return { error: error.message };
+    return { path };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Échec de l'envoi du document." };
+  }
 }
