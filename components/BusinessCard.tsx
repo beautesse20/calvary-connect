@@ -28,7 +28,11 @@ export default function BusinessCard({
   return (
     <Link href={`/entreprises/${business.id}`} className="biz-card" style={{ display: 'block' }}>
       <div className="biz-thumb">
-        <CategoryIcon slug={business.categories?.slug} width={34} height={34} className="i" />
+        {business.logo_url ? (
+          <img src={business.logo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ) : (
+          <CategoryIcon slug={business.categories?.slug} width={34} height={34} className="i" />
+        )}
         <span className="badge">{badgeLabel}</span>
       </div>
       <div className="biz-body">

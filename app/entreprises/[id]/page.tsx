@@ -73,7 +73,15 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
         <div className="container">
           <div className="biz-header">
             <div className="biz-logo">
-              <CategoryIcon slug={business.categories?.slug} width={46} height={46} />
+              {business.logo_url ? (
+                <img
+                  src={business.logo_url}
+                  alt=""
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }}
+                />
+              ) : (
+                <CategoryIcon slug={business.categories?.slug} width={46} height={46} />
+              )}
             </div>
             <div>
               <h1 style={{ fontSize: 28, color: 'var(--blue-900)' }}>{business.name}</h1>
