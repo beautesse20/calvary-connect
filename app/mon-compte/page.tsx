@@ -40,7 +40,7 @@ export default async function MonComptePage() {
       .order('created_at', { ascending: false }),
     supabase
       .from('messages')
-      .select('id, content, created_at, business_id, businesses(name)')
+      .select('id, content, created_at, business_id, reply_content, replied_at, businesses(name)')
       .eq('sender_id', user.id)
       .order('created_at', { ascending: false }),
     supabase

@@ -34,6 +34,8 @@ type MessageRow = {
   content: string;
   created_at: string;
   business_id: string | null;
+  reply_content: string | null;
+  replied_at: string | null;
   businesses: { name: string } | null;
 };
 
@@ -336,6 +338,12 @@ export default function MonCompteClient({
               <span className="who">{m.businesses?.name || '—'}</span>
               <p>{m.content}</p>
               <span className="review-date">{formatDate(m.created_at)}</span>
+              {m.reply_content && (
+                <div className="callout" style={{ marginTop: 10, background: 'var(--blue-50)', borderColor: 'var(--blue-100)' }}>
+                  <strong style={{ display: 'block', fontSize: 12.5, marginBottom: 4 }}>{dict.account.replyFrom}</strong>
+                  {m.reply_content}
+                </div>
+              )}
             </div>
           </div>
         ))}

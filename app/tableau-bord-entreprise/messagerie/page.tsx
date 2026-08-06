@@ -2,16 +2,15 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import SiteHeader from '@/components/SiteHeader';
 import DashSidebar from '@/components/DashSidebar';
-import BusinessDashboardClient from '@/components/BusinessDashboardClient';
+import MessagerieClient from '@/components/MessagerieClient';
 import { createClient } from '@/lib/supabase/server';
-import { getCategories } from '@/lib/data/businesses';
 import { getLocale } from '@/lib/i18n/get-locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
-import type { Business, BusinessDocument, Message, Review } from '@/lib/types';
+import type { Business, Message } from '@/lib/types';
 
 export const revalidate = 0;
 
-export default async function TableauBordEntreprisePage() {
+export default async function MessagerieEntreprisePage() {
   const supabase = await createClient();
   const locale = await getLocale();
   const dict = getDictionary(locale);
@@ -19,7 +18,7 @@ export default async function TableauBordEntreprisePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect('/connexion?next=/tableau-bord-entreprise');
+  if (!user) redirect('/connexion?next=/tableau-bord-entreprise/messagerie');
 
   const { data: business } = await supabase
     .from('businesses')
@@ -48,14 +47,14 @@ export default async function TableauBordEntreprisePage() {
     );
   }
 
-  const [{ data: messagesData }, { data: reviewsData }, { data: documentsData }, categories] = await Promise.all([
-    supabase.from('messages').select('*').eq('business_id', business.id).order('created_at', { ascending: false }),
-    supabase.from('reviews').select('*').eq('business_id', business.id).eq('status', 'visible'),
-    supabase.from('business_documents').select('*').eq('business_id', business.id).order('created_at', { ascending: false }),
-    getCategories(),
-  ]);
+  const { data: messagesData } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('business_id', business.id)
+    .order('created_at', { ascending: false });
 
-  const unreadCount = (messagesData || []).filter((m) => m.status === 'unread').length;
+  const messages = (messagesData || []) as Message[];
+  const unreadCount = messages.filter((m) => m.status === 'unread').length;
 
   return (
     <>
@@ -66,7 +65,7 @@ export default async function TableauBordEntreprisePage() {
             {
               href: '/tableau-bord-entreprise',
               label: dict.dashboardBusiness.sidebarStats,
-              active: true,
+              active: false,
               icon: (
                 <svg className="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                   <line x1="12" y1="20" x2="12" y2="10" />
@@ -78,7 +77,7 @@ export default async function TableauBordEntreprisePage() {
             {
               href: '/tableau-bord-entreprise/messagerie',
               label: dict.dashboardBusiness.sidebarMessages,
-              active: false,
+              active: true,
               badge: unreadCount,
               icon: (
                 <svg className="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -90,13 +89,7 @@ export default async function TableauBordEntreprisePage() {
             },
           ]}
         />
-        <BusinessDashboardClient
-          business={business as Business}
-          categories={categories}
-          messages={(messagesData || []) as Message[]}
-          reviews={(reviewsData || []) as Review[]}
-          documents={(documentsData || []) as BusinessDocument[]}
-        />
+        <MessagerieClient business={business as Business} messages={messages} />
       </div>
     </>
   );

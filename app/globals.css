@@ -665,6 +665,14 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 }
 .dash-sidebar a.active { background: rgba(255,255,255,0.08); color: white; }
 .dash-sidebar a svg { width: 18px; height: 18px; flex-shrink: 0; }
+.dash-sidebar-badge {
+  margin-left: auto;
+  background: var(--red); color: white;
+  font-size: 11px; font-weight: 800;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
 .dash-main { flex: 1; padding: 36px 40px; background: var(--blue-50); }
 .dash-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
 .dash-head h1 { font-size: 24px; color: var(--blue-900); }

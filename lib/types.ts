@@ -80,5 +80,7 @@ export interface Message {
   sender_email: string | null;
   content: string;
   status: 'unread' | 'read';
+  reply_content: string | null;
+  replied_at: string | null;
   created_at: string;
 }

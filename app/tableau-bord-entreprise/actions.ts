@@ -50,6 +50,31 @@ export async function markMessageRead(messageId: string) {
   const supabase = await createClient();
   await supabase.from('messages').update({ status: 'read' }).eq('id', messageId);
   revalidatePath('/tableau-bord-entreprise');
+  revalidatePath('/tableau-bord-entreprise/messagerie');
+}
+
+export async function replyToMessage(messageId: string, replyContent: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'Non connecté.' };
+  if (!replyContent.trim()) return { error: 'La réponse ne peut pas être vide.' };
+
+  const { data: msg } = await supabase.from('messages').select('business_id').eq('id', messageId).single();
+  if (!msg || !(await assertOwnsBusiness(supabase, msg.business_id as string, user.id))) {
+    return { error: 'Message introuvable.' };
+  }
+
+  const { error } = await supabase
+    .from('messages')
+    .update({ reply_content: replyContent.trim(), replied_at: new Date().toISOString(), status: 'read' })
+    .eq('id', messageId);
+
+  if (error) return { error: error.message };
+  revalidatePath('/tableau-bord-entreprise/messagerie');
+  revalidatePath('/mon-compte');
+  return { success: true };
 }
 
 // Les Server Actions de Next.js n'acceptent pas de manière fiable un objet

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRef, useState } from 'react';
 import type { Business, BusinessDocument, Category, Message, Review } from '@/lib/types';
 import { addBusinessDocument, updateBusinessLogo, updateMyBusiness } from '@/app/tableau-bord-entreprise/actions';
@@ -336,6 +337,11 @@ export default function BusinessDashboardClient({
 
       {!editing && (
         <div className="table-card">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '14px 20px 0' }}>
+            <Link href="/tableau-bord-entreprise/messagerie" style={{ fontSize: 13, fontWeight: 700, color: 'var(--blue-700)' }}>
+              {dict.dashboardBusiness.goToMessaging} →
+            </Link>
+          </div>
           <table>
             <thead>
               <tr>
@@ -354,7 +360,7 @@ export default function BusinessDashboardClient({
                 </tr>
               ) : (
                 messages.map((m) => (
-                  <tr key={m.id}>
+                  <tr key={m.id} onClick={() => (window.location.href = '/tableau-bord-entreprise/messagerie')} style={{ cursor: 'pointer' }}>
                     <td>
                       <div className="row-title">{m.sender_name || (locale === 'en' ? 'Member' : 'Membre')}</div>
                       <div className="row-sub">« {m.content.slice(0, 80)}{m.content.length > 80 ? '…' : ''} »</div>
