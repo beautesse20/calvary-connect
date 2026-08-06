@@ -107,7 +107,7 @@ export default function InscriptionWizard({
   if (done) {
     return (
       <div className="card card-pad" style={{ textAlign: 'center' }}>
-        <div className="modal-box" style={{ boxShadow: 'none', padding: 0 }}>
+        <div className="modal-box" style={{ boxShadow: 'none', padding: 0, margin: '0 auto' }}>
           <div className="icon-wrap" style={{ background: 'var(--green-bg)', color: 'var(--green)' }}>
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
               <polyline points="20 6 9 17 4 12" />
