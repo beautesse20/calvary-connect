@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
-import type { Business } from '@/lib/types';
+import type { Business, BusinessDocument } from '@/lib/types';
 import {
   approveBusiness,
   deactivateBusiness,
@@ -27,7 +27,15 @@ function timeAgo(iso: string, locale: string) {
   return `il y a ${days} jour${days > 1 ? 's' : ''}`;
 }
 
-export default function AdminDashboardClient({ pending, active }: { pending: Business[]; active: Business[] }) {
+export default function AdminDashboardClient({
+  pending,
+  active,
+  documents,
+}: {
+  pending: Business[];
+  active: Business[];
+  documents: BusinessDocument[];
+}) {
   const { dict, locale } = useLocale();
   const [, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -37,11 +45,16 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
   const [deactivateReason, setDeactivateReason] = useState('');
   const [addAdminOpen, setAddAdminOpen] = useState(false);
   const [adminEmail, setAdminEmail] = useState('');
+  const [docsTarget, setDocsTarget] = useState<Business | null>(null);
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
 
   function categoryName(b: Business) {
     if (!b.categories) return dict.dashboardAdmin.other;
     return locale === 'en' ? b.categories.name_en : b.categories.name_fr;
+  }
+
+  function docLabel(t: string) {
+    return t === 'enregistrement' ? dict.dashboardAdmin.docRegistration : dict.dashboardAdmin.docIdentity;
   }
 
   function handleApprove(b: Business) {
@@ -174,6 +187,12 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
                           <circle cx="12" cy="12" r="3" />
                         </svg>
                       </Link>
+                      <button className="icon-btn" title={dict.dashboardAdmin.viewDocuments} onClick={() => setDocsTarget(b)}>
+                        <svg className="i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                      </button>
                       <button className="btn btn-primary btn-sm" onClick={() => handleApprove(b)} disabled={busyId === b.id}>
                         {busyId === b.id ? <span className="spinner" /> : dict.dashboardAdmin.approve}
                       </button>
@@ -237,6 +256,12 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
                           <circle cx="12" cy="12" r="3" />
                         </svg>
                       </Link>
+                      <button className="icon-btn" title={dict.dashboardAdmin.viewDocuments} onClick={() => setDocsTarget(b)}>
+                        <svg className="i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                      </button>
                       {b.status === 'approved' ? (
                         <button className="btn btn-danger-outline btn-sm" onClick={() => setDeactivateTarget(b)}>
                           {dict.dashboardAdmin.deactivate}
@@ -308,6 +333,54 @@ export default function AdminDashboardClient({ pending, active }: { pending: Bus
               </button>
               <button className="btn btn-primary btn-block" style={{ background: 'var(--red)', boxShadow: 'none' }} onClick={confirmDeactivate}>
                 {dict.dashboardAdmin.confirmDeactivate}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {docsTarget && (
+        <div className="modal-overlay" onClick={() => setDocsTarget(null)}>
+          <div className="modal-box" style={{ textAlign: 'left', maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ textAlign: 'center', marginBottom: 4 }}>{docsTarget.name}</h3>
+            <p style={{ textAlign: 'center' }}>{dict.dashboardAdmin.documentsSubtitle}</p>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 13.5, fontWeight: 700, display: 'block', marginBottom: 6 }}>
+                {dict.dashboardAdmin.logoLabel}
+              </label>
+              {docsTarget.logo_url ? (
+                <img
+                  src={docsTarget.logo_url}
+                  alt=""
+                  style={{ width: 64, height: 64, borderRadius: 12, objectFit: 'cover', border: '1px solid var(--border)' }}
+                />
+              ) : (
+                <span className="account-empty">{dict.dashboardAdmin.noLogo}</span>
+              )}
+            </div>
+
+            {['enregistrement', 'identite'].map((docType) => {
+              const doc = documents.find((d) => d.business_id === docsTarget.id && d.doc_type === docType);
+              return (
+                <div key={docType} style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 13.5, fontWeight: 700, display: 'block', marginBottom: 6 }}>
+                    {docLabel(docType)}
+                  </label>
+                  {doc && doc.signedUrl ? (
+                    <a href={doc.signedUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm btn-block">
+                      {dict.dashboardAdmin.viewDocument}
+                    </a>
+                  ) : (
+                    <span className="account-empty">{dict.dashboardAdmin.noDocuments}</span>
+                  )}
+                </div>
+              );
+            })}
+
+            <div className="modal-actions" style={{ marginTop: 10 }}>
+              <button className="btn btn-outline btn-block" onClick={() => setDocsTarget(null)}>
+                {dict.common.cancel}
               </button>
             </div>
           </div>

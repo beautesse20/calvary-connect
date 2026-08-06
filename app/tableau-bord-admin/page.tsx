@@ -5,7 +5,7 @@ import AdminDashboardClient from '@/components/AdminDashboardClient';
 import { createClient } from '@/lib/supabase/server';
 import { getLocale } from '@/lib/i18n/get-locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
-import type { Business } from '@/lib/types';
+import type { Business, BusinessDocument } from '@/lib/types';
 
 export const revalidate = 0;
 
@@ -24,14 +24,25 @@ export default async function TableauBordAdminPage() {
     redirect('/');
   }
 
-  const [{ data: pendingData }, { data: activeData }] = await Promise.all([
+  const [{ data: pendingData }, { data: activeData }, { data: documentsData }] = await Promise.all([
     supabase.from('businesses').select('*, categories(*)').eq('status', 'pending').order('created_at', { ascending: true }),
     supabase
       .from('businesses')
       .select('*, categories(*)')
       .in('status', ['approved', 'deactivated', 'suspended'])
       .order('updated_at', { ascending: false }),
+    supabase.from('business_documents').select('*').order('created_at', { ascending: true }),
   ]);
+
+  // Le bucket "business-documents" est privé : on génère une URL signée
+  // (valable 1h) pour chaque document afin que l'admin puisse le consulter
+  // depuis le tableau de bord.
+  const documents: BusinessDocument[] = await Promise.all(
+    (documentsData || []).map(async (d) => {
+      const { data: signed } = await supabase.storage.from('business-documents').createSignedUrl(d.file_path, 3600);
+      return { ...d, signedUrl: signed?.signedUrl || null } as BusinessDocument;
+    })
+  );
 
   return (
     <>
@@ -46,7 +57,11 @@ export default async function TableauBordAdminPage() {
             </svg>
           }
         />
-        <AdminDashboardClient pending={(pendingData || []) as Business[]} active={(activeData || []) as Business[]} />
+        <AdminDashboardClient
+          pending={(pendingData || []) as Business[]}
+          active={(activeData || []) as Business[]}
+          documents={documents}
+        />
       </div>
     </>
   );

@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import type { Business, Category, Message, Review } from '@/lib/types';
-import { updateMyBusiness } from '@/app/tableau-bord-entreprise/actions';
+import { useRef, useState } from 'react';
+import type { Business, BusinessDocument, Category, Message, Review } from '@/lib/types';
+import { addBusinessDocument, updateBusinessLogo, updateMyBusiness } from '@/app/tableau-bord-entreprise/actions';
 import { useLocale } from './LocaleProvider';
+
+const DOC_TYPES = ['enregistrement', 'identite'] as const;
 
 const STATUS_CLASS: Record<string, string> = {
   pending: 'status-pending',
@@ -33,11 +35,13 @@ export default function BusinessDashboardClient({
   categories,
   messages,
   reviews,
+  documents,
 }: {
   business: Business;
   categories: Category[];
   messages: Message[];
   reviews: Review[];
+  documents: BusinessDocument[];
 }) {
   const { dict, locale } = useLocale();
   const STATUS_LABEL: Record<string, string> = {
@@ -61,6 +65,82 @@ export default function BusinessDashboardClient({
 
   const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
   const unreadCount = messages.filter((m) => m.status === 'unread').length;
+
+  const [logo, setLogo] = useState(business.logo_url);
+  const [logoPending, setLogoPending] = useState(false);
+  const [logoError, setLogoError] = useState('');
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const [docList, setDocList] = useState(documents);
+  const [docPending, setDocPending] = useState<string | null>(null);
+  const [docError, setDocError] = useState<Record<string, string>>({});
+  const regDocInputRef = useRef<HTMLInputElement>(null);
+  const idDocInputRef = useRef<HTMLInputElement>(null);
+  const docInputRefs: Record<string, React.RefObject<HTMLInputElement>> = {
+    enregistrement: regDocInputRef,
+    identite: idDocInputRef,
+  };
+
+  const docLabel = (t: string) =>
+    t === 'enregistrement' ? dict.dashboardBusiness.docRegistration : dict.dashboardBusiness.docIdentity;
+
+  async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoError('');
+    if (file.size > 8 * 1024 * 1024) {
+      setLogoError(dict.account.photoTooLarge);
+      if (logoInputRef.current) logoInputRef.current.value = '';
+      return;
+    }
+    setLogoPending(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('businessId', business.id);
+      const res = await updateBusinessLogo(fd);
+      if (res.error) setLogoError(res.error);
+      else if ('url' in res && res.url) setLogo(res.url);
+    } catch {
+      setLogoError(dict.account.photoUploadError);
+    } finally {
+      setLogoPending(false);
+      if (logoInputRef.current) logoInputRef.current.value = '';
+    }
+  }
+
+  async function handleDocChange(docType: string, e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    const ref = docInputRefs[docType];
+    if (!file) return;
+    setDocError((prev) => ({ ...prev, [docType]: '' }));
+    if (file.size > 8 * 1024 * 1024) {
+      setDocError((prev) => ({ ...prev, [docType]: dict.account.photoTooLarge }));
+      if (ref?.current) ref.current.value = '';
+      return;
+    }
+    setDocPending(docType);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('businessId', business.id);
+      fd.append('docType', docType);
+      const res = await addBusinessDocument(fd);
+      if (res.error) {
+        setDocError((prev) => ({ ...prev, [docType]: res.error as string }));
+      } else {
+        setDocList((prev) => [
+          { id: `${Date.now()}`, business_id: business.id, file_path: '', doc_type: docType, created_at: new Date().toISOString() },
+          ...prev,
+        ]);
+      }
+    } catch {
+      setDocError((prev) => ({ ...prev, [docType]: dict.account.photoUploadError }));
+    } finally {
+      setDocPending(null);
+      if (ref?.current) ref.current.value = '';
+    }
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -103,6 +183,74 @@ export default function BusinessDashboardClient({
       {business.status === 'rejected' && business.rejection_reason && (
         <div className="callout amber" style={{ marginBottom: 24 }}>
           {dict.dashboardBusiness.rejectedNote} : {business.rejection_reason}
+        </div>
+      )}
+
+      {!editing && (
+        <div className="card card-pad" style={{ marginBottom: 24 }}>
+          <h2 className="account-card-title">{dict.dashboardBusiness.logoDocsTitle}</h2>
+
+          <div className="account-avatar-row" style={{ marginTop: 6 }}>
+            <div className="account-avatar" style={{ borderRadius: 12 }}>
+              {logo ? <img src={logo} alt="" /> : business.name.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                onClick={() => logoInputRef.current?.click()}
+                disabled={logoPending}
+              >
+                {logoPending ? <span className="spinner" /> : logo ? dict.dashboardBusiness.changeLogo : dict.dashboardBusiness.addLogo}
+              </button>
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                style={{ display: 'none' }}
+                onChange={handleLogoChange}
+              />
+              {logoError && <div style={{ fontSize: 12.5, color: 'var(--red)', marginTop: 6 }}>{logoError}</div>}
+            </div>
+          </div>
+
+          {DOC_TYPES.map((docType) => {
+            const existing = docList.find((d) => d.doc_type === docType);
+            return (
+              <div key={docType} style={{ marginTop: 16 }}>
+                <label style={{ fontSize: 13.5, fontWeight: 700, display: 'block', marginBottom: 6 }}>
+                  {docLabel(docType)}
+                </label>
+                {existing ? (
+                  <div className="file-chip">
+                    <span>{dict.dashboardBusiness.docProvided}</span>
+                    <button type="button" onClick={() => docInputRefs[docType].current?.click()} disabled={docPending === docType}>
+                      {docPending === docType ? <span className="spinner dark" /> : dict.dashboardBusiness.replaceDocument}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={() => docInputRefs[docType].current?.click()}
+                    disabled={docPending === docType}
+                  >
+                    {docPending === docType ? <span className="spinner dark" /> : dict.dashboardBusiness.addDocument}
+                  </button>
+                )}
+                <input
+                  ref={docInputRefs[docType]}
+                  type="file"
+                  accept="application/pdf,image/png,image/jpeg"
+                  style={{ display: 'none' }}
+                  onChange={(e) => handleDocChange(docType, e)}
+                />
+                {docError[docType] && (
+                  <div style={{ fontSize: 12.5, color: 'var(--red)', marginTop: 6 }}>{docError[docType]}</div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

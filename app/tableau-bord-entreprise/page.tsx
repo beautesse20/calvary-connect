@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getCategories } from '@/lib/data/businesses';
 import { getLocale } from '@/lib/i18n/get-locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
-import type { Business, Message, Review } from '@/lib/types';
+import type { Business, BusinessDocument, Message, Review } from '@/lib/types';
 
 export const revalidate = 0;
 
@@ -48,9 +48,10 @@ export default async function TableauBordEntreprisePage() {
     );
   }
 
-  const [{ data: messagesData }, { data: reviewsData }, categories] = await Promise.all([
+  const [{ data: messagesData }, { data: reviewsData }, { data: documentsData }, categories] = await Promise.all([
     supabase.from('messages').select('*').eq('business_id', business.id).order('created_at', { ascending: false }),
     supabase.from('reviews').select('*').eq('business_id', business.id).eq('status', 'visible'),
+    supabase.from('business_documents').select('*').eq('business_id', business.id).order('created_at', { ascending: false }),
     getCategories(),
   ]);
 
@@ -73,6 +74,7 @@ export default async function TableauBordEntreprisePage() {
           categories={categories}
           messages={(messagesData || []) as Message[]}
           reviews={(reviewsData || []) as Review[]}
+          documents={(documentsData || []) as BusinessDocument[]}
         />
       </div>
     </>

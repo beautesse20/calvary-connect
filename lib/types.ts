@@ -55,6 +55,15 @@ export interface Profile {
   created_at: string;
 }
 
+export interface BusinessDocument {
+  id: string;
+  business_id: string;
+  file_path: string;
+  doc_type: string;
+  created_at: string;
+  signedUrl?: string | null;
+}
+
 export interface Favorite {
   id: string;
   user_id: string;
