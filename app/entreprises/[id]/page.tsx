@@ -26,7 +26,18 @@ export default async function BusinessDetailPage({ params }: { params: Promise<{
 
   const [{ data: { user } }, business] = await Promise.all([supabase.auth.getUser(), getBusinessById(id)]);
 
-  if (!business || (business.status !== 'approved' && business.owner_id !== user?.id)) {
+  let isAdmin = false;
+  if (user) {
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
+  }
+
+  // Une fiche non approuvée (pending/refusée/désactivée) reste visible pour
+  // sa propriétaire ET pour les administrateurs — c'est justement ce qui
+  // leur permet de la prévisualiser avant de l'approuver depuis le tableau
+  // de bord admin. Sans ça, cliquer sur une demande en attente renvoyait un
+  // 404 pour tout admin qui n'en était pas lui-même le propriétaire.
+  if (!business || (business.status !== 'approved' && business.owner_id !== user?.id && !isAdmin)) {
     notFound();
   }
 
